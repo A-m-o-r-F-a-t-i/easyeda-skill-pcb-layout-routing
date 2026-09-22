@@ -228,13 +228,13 @@ PCB MCP 不暴露任意 JavaScript 执行入口。实时 DRC 启停、完整快�
 {
   "id": "outline-main",
   "type": "outline.create",
-  "points": [[0, 0], [80, 0], [80, 50], [0, 50]],
+  "points": [[-40, -25], [40, -25], [40, 25], [-40, 25]],
   "width": 0.10,
   "locked": true
 }
 ```
 
-执行器把点列编译为一个原生闭合 `PrimitivePolyline` 并独立读取其 polygon 源数据；不会展开成大量普通直线。修改既有板框前先读取旧 Polyline 并精确删除或重建，避免生成重叠轮廓。
+新建圆形板框必须以 `[0,0]` 为圆心；新建多边形板框的包围盒中心必须为 `[0,0]`。执行器把点列编译为一个原生闭合 `PrimitivePolyline` 并独立读取其 polygon 源数据；不会展开成大量普通直线。修改既有板框前先读取旧 Polyline 并精确删除或重建，避免生成重叠轮廓。
 
 ### 5.7 铺铜边界
 
@@ -244,7 +244,7 @@ PCB MCP 不暴露任意 JavaScript 执行入口。实时 DRC 启停、完整快�
   "type": "pour.create",
   "net": "GND",
   "layer": "TOP",
-  "points": [[1, 1], [79, 1], [79, 49], [1, 49]],
+  "points": [[-39, -24], [39, -24], [39, 24], [-39, 24]],
   "pourName": "TOP_GND",
   "priorityPolicy": "native",
   "preserveSilos": false,

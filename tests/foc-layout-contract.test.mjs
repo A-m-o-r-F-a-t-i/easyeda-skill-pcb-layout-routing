@@ -25,8 +25,8 @@ const recipes = read('references/operation-recipes.md');
 const examplePlans = [...recipes.matchAll(/```json\s*\n([\s\S]*?)\n```/g)]
   .map(match => JSON.parse(match[1]));
 
-test('v5.4 entry is bounded in bytes as well as lines', () => {
-  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.4\.\d+\n---/);
+test('v5.5 entry is bounded in bytes as well as lines', () => {
+  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.5\.\d+\n---/);
   assert.ok(skill.split('\n').length <= 115);
   assert.ok(Buffer.byteLength(skill, 'utf8') <= 16500);
   assert.ok(skill.indexOf('原理图是输入') < 1000);
@@ -67,7 +67,7 @@ test('ordinary components stay unlocked and reference-designator displays are re
   assert.match(skill, /keyVisible\/valueVisible/);
   assert.match(skill, /independentStringsUnchanged/);
   const tools = read('references/tool-index.md');
-  assert.match(tools, /实际 2\.4\.8 注册表/);
+  assert.match(tools, /实际 2\.5\.0 注册表/);
   assert.match(tools, /默认21工具/);
   assert.match(tools, /`pcb_cleanup_components`/);
   const silk = read('references/silkscreen-usability.md');
@@ -97,14 +97,25 @@ test('ordinary saves stay light while milestone DRC is mandatory', () => {
 
 test('DRC classification fixes overlap and bounds every waiver', () => {
   const policy = read('references/drc-policy.md');
-  assert.match(skill, /跨组件焊盘、封装实体或装配外形重叠在布局阶段必须立即修正/);
-  assert.match(policy, /即使两个焊盘属于同一网络，也不得使用“同网间距”豁免/);
+  assert.match(skill, /不同元件焊盘，或独立焊盘\/过孔侵入元件焊盘/);
+  assert.match(policy, /即使对象属于同一网络，也不得使用“同网间距”豁免/);
   assert.match(policy, /同网络焊盘间距：可豁免/);
   assert.match(policy, /可信库封装内部报告：可豁免/);
   assert.match(policy, /未布线：分阶段处理/);
   assert.match(policy, /`FINAL_DRC` 还要求未布线为零/);
   assert.match(policy, /不能称“DRC 零错误”/);
   assert.match(policy, /关闭实时\/批量规则、放宽间距、改网、隐藏或删除必要对象/);
+});
+
+test('new outlines use the coordinate origin and placement writes reject pad overlap', () => {
+  const policy = read('references/drc-policy.md');
+  const tools = read('references/tool-index.md');
+  assert.match(skill, /新板框以坐标原点 `\[0,0\]` 为几何中心/);
+  assert.match(skill, /不同元件焊盘、独立大焊盘\/过孔与元件焊盘不得重叠/);
+  assert.match(skill, /`PAD_OVERLAP_BLOCKED` 表示布局需重排/);
+  assert.match(policy, /独立 PTH\/NPTH\/接线焊盘或过孔侵入元件焊盘/);
+  assert.match(policy, /双方对象 ID、父组件和网络/);
+  assert.match(tools, /翻面或换层后的真实重叠会回滚元件/);
 });
 
 test('native DRC completion and full totals are required independently of a detail page', () => {
@@ -222,6 +233,11 @@ test('five complete plan examples retain real safety fields and portable fixture
   for (const type of ['component.modify', 'route.create', 'via.create', 'outline.create', 'hole.create', 'pad.create', 'pour.create']) {
     assert.ok(types.has(type), type);
   }
+  const outline = examplePlans.flatMap(plan => plan.operations).find(operation => operation.type === 'outline.create');
+  const xs = outline.points.map(point => point[0]);
+  const ys = outline.points.map(point => point[1]);
+  assert.equal((Math.min(...xs) + Math.max(...xs)) / 2, 0);
+  assert.equal((Math.min(...ys) + Math.max(...ys)) / 2, 0);
   assert.equal(examplePlans[0].operations[0].set.layer, 'BOTTOM');
   assert.equal(examplePlans[0].operations[0].copperPolicy, 'unrouted');
   assert.equal(examplePlans[0].constraints.topOnlyExcept, undefined);

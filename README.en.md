@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | English
 
-This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.4.2**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
+This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.5.0**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
 
 ## Core principles
 
@@ -12,7 +12,7 @@ This repository contains execution guidance for AI agents working on production-
 - Prefer copper areas or wide copper for high-current regions when isolation and return paths remain sound; do not replace pourable regions with many narrow traces.
 - Do not use automatic routing. Route explicitly and resolve congestion by improving placement and orientation.
 - Treat native DRC as a mandatory PCB milestone at coherent placement, critical/full routing, repour, and final release, without rescanning the whole board after every object or trace.
-- Fix cross-component overlap immediately. Waive same-net pad spacing, findings internal to an unchanged trusted library footprint, and construction-stage unrouted reports only under explicit conditions while retaining the original finding and rationale.
+- Center each new board outline on the coordinate origin. Never overlap pads owned by different components or place standalone large pads/vias over component pads. During placement DRC, investigate spacing findings for physical overlap before considering any same-net waiver.
 - Keep ordinary components unlocked by default. During full-board finishing, remove all visible reference-designator silkscreen while preserving the mandatory `Designator` identity attributes, BOM linkage, and functional text.
 - Make silkscreen readable at real manufacturing scale. Connector names, pin order, and net meaning take priority over low-value reference text.
 - Merge valid user interventions into the current design and continue from the latest state instead of reverting to an older plan.
