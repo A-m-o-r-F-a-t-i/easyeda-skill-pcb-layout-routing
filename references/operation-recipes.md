@@ -122,7 +122,7 @@
 
 ## 保存、位号清理、文字和查错
 
-普通保存用 `pcb_save_and_drc(save=true, runDrc=false)`并携带工具要求的当前 target/expected。完成布线、铺铜、丝印后才 `runDrc=true`；保存不必重新读全板或组合验收。
+普通保存用 `pcb_save_and_drc(save=true, runDrc=false)`并携带工具要求的当前 target/expected。布局成形、关键/整板布线、重建实际铜和最终导出四类里程碑使用 `pcb_save_and_drc(save=true, runDrc=true)`；单颗/单线/每小批写入后不重复运行。结果按 [DRC 策略](drc-policy.md)分类，跨组件重叠优先修正，允许豁免仍保留原始项目和理由。
 
 完整 PCB 在首次导入/ECO 后及最终丝印收尾前调用 `pcb_cleanup_components`。先以 `mode="preflight", unlockComponents=true, deleteReferenceDesignators=true`取得 guard，再用同一目标、选项和 guard 调用 `mode="execute"`；状态变化时重新预检。参数名沿用 `deleteReferenceDesignators`，真实客户端动作是把 attached `Designator` 的 `keyVisible/valueVisible` 同时设为 `false`，从板面清除位号丝印，同时保留属性 ID、value、父组件、网络、位置、层、角度和 BOM 身份，也不删除接口功能字等独立字符串。存在用户明确锁定例外时仍必须执行位号丝印清理，但按明确要求处理解锁子项。
 

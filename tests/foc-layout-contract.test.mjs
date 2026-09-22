@@ -13,6 +13,7 @@ const core = [
   'references/schematic-footprint-preflight.md',
   'references/placement-routing-closure.md',
   'references/product-physical-interfaces.md',
+  'references/drc-policy.md',
   'references/inspection-and-release.md',
   'references/layout-playbook.md', 'references/routing-playbook.md',
   'references/experimental/motor-foc.md',
@@ -24,10 +25,10 @@ const recipes = read('references/operation-recipes.md');
 const examplePlans = [...recipes.matchAll(/```json\s*\n([\s\S]*?)\n```/g)]
   .map(match => JSON.parse(match[1]));
 
-test('v5.3.1 entry is bounded in bytes as well as lines', () => {
-  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.3\.1\n---/);
-  assert.ok(skill.split('\n').length <= 110);
-  assert.ok(Buffer.byteLength(skill, 'utf8') <= 15000);
+test('v5.4.0 entry is bounded in bytes as well as lines', () => {
+  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.4\.0\n---/);
+  assert.ok(skill.split('\n').length <= 115);
+  assert.ok(Buffer.byteLength(skill, 'utf8') <= 16500);
   assert.ok(skill.indexOf('原理图是输入') < 1000);
 });
 
@@ -40,6 +41,7 @@ test('electrical review is removed, not deferred to final release', () => {
   assert.match(skill, /也不把这些检查推迟到交付前补做/);
   assert.match(read('references/schematic-footprint-preflight.md'), /原“原理图与封装预检门”已撤销/);
   assert.doesNotMatch(core.map(read).join('\n'), /完整额定值.*并行补齐|必须逐项检查[：:]|S1 未完全通过/);
+  assert.doesNotMatch(read('references/hard-rules-and-pitfalls.md'), /3D\/数据手册尺寸|所有数据手册.*下一项真实作图动作需要时读取/);
 });
 
 test('drawing inputs are distinguished from a pin correctness audit', () => {
@@ -83,14 +85,26 @@ test('normal execution goes directly from prepare to execute', () => {
   assert.match(skill, /模型不重复实现它的校验器/);
 });
 
-test('normal save is DRC-free and final DRC follows completed copper and silk', () => {
+test('ordinary saves stay light while milestone DRC is mandatory', () => {
+  const policy = read('references/drc-policy.md');
+  assert.match(skill, /DRC 是阶段门，不是逐步仪式/);
   assert.match(skill, /runDrc:false/);
-  assert.match(skill, /布线、铺铜、丝印完成后集中运行最终 DRC/);
-  for (const file of ['references/workflow-patterns.md', 'references/routing-playbook.md', 'references/placement-routing-closure.md']) {
-    assert.match(read(file), /runDrc\s*:\s*false/, file);
-    assert.doesNotMatch(read(file), /必须在写入后运行原生\s*DRC/, file);
-  }
+  for (const gate of ['LAYOUT_DRC', 'ROUTING_DRC', 'POUR_DRC', 'FINAL_DRC']) assert.match(policy, new RegExp(gate), gate);
+  assert.match(policy, /pcb_save_and_drc\(save=true, runDrc=true\)/);
+  assert.match(skill, /单颗移动、单根走线或每一小批写入后不重复整板 DRC/);
   assert.match(skill, /不修改用户的编辑器实时 DRC 设置/);
+});
+
+test('DRC classification fixes overlap and bounds every waiver', () => {
+  const policy = read('references/drc-policy.md');
+  assert.match(skill, /跨组件焊盘、封装实体或装配外形重叠在布局阶段必须立即修正/);
+  assert.match(policy, /即使两个焊盘属于同一网络，也不得使用“同网间距”豁免/);
+  assert.match(policy, /同网络焊盘间距：可豁免/);
+  assert.match(policy, /可信库封装内部报告：可豁免/);
+  assert.match(policy, /未布线：分阶段处理/);
+  assert.match(policy, /`FINAL_DRC` 还要求未布线为零/);
+  assert.match(policy, /不能称“DRC 零错误”/);
+  assert.match(policy, /关闭实时\/批量规则、放宽间距、改网、隐藏或删除必要对象/);
 });
 
 test('power return, switching, bootstrap, decoupling and Kelvin knowledge remains', () => {

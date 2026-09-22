@@ -30,7 +30,7 @@
 | `pcb_execute_text_plan(mode="validate")`、`pcb_execute_text_plan` | 校验否/执行是 | 校验并执行`easyeda-pcb-text-plan/v1`，处理独立丝印和已有元件属性文字 |
 | `pcb_read_constraints`、`pcb_manage_constraint_group` | 读否/管理是 | 读取规则；受保护管理网络类、差分对、等长组和焊盘对组 |
 | `pcb_import_schematic_changes(mode="preflight")`、`pcb_import_schematic_changes` | 准备否/导入是 | 关联原理图与PCB摘要守卫后调用公开ECO导入；导入后需重验铜和丝印 |
-| `pcb_save_and_drc` | 保存、可执行 DRC | 最终保存和原生 DRC；不验证热载流、信号完整性或视觉质量 |
+| `pcb_save_and_drc` | 保存、可执行 DRC | 阶段门与最终保存的原生 DRC；不验证热载流、信号完整性或视觉质量 |
 
 PCB MCP 不暴露任意 JavaScript 执行入口。实时 DRC 启停、完整快照和快照差异位于默认关闭的 diagnostics profile；生产流程使用 `pcb_save_and_drc` 运行批量原生 DRC。需要查询通用 API、扩展开发或 Bridge 底层诊断时，使用 `easyeda-api` Skill。
 
@@ -358,7 +358,8 @@ pcb_status
 → RECONCILE_EXACT_OPERATION：仅按 minimumReadScope 读回，禁止重放，只生成剩余后缀
 → 必要时截图/重铺
 → 普通保存 pcb_save_and_drc(save=true, runDrc=false)
-→ 继续布局/布线；布线、铺铜、丝印完成后才集中最终 PCB DRC 与连接/文件检查
+→ 到 LAYOUT_DRC / ROUTING_DRC / POUR_DRC / FINAL_DRC 里程碑时 pcb_save_and_drc(save=true, runDrc=true)
+→ 按 DRC 策略修正阻断项、记录明确豁免后继续布局/布线或连接/文件检查
 ```
 
 同一区域十个以上图元或需要断点恢复时，使用 `planPath`。内联 `plan` 仅用于小计划或测试。
