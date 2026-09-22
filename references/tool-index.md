@@ -1,13 +1,13 @@
 # PCB MCP 工具索引
 
-由实际 2.3.0 注册表生成。默认20工具；诊断profile仅3工具，legacy仅用于独立兼容回归。
+由实际 2.4.7 注册表生成。默认21工具；诊断 profile 仅3工具，legacy 为30工具且仅用于独立兼容回归。
 星号表示必填参数，具体结构以动态Tool Schema为准。本表按需加载，不要求每项任务调用所有工具。
 
 ## 共同契约
 
 目标工具使用明确windowId/projectUuid/documentUuid，tabId从真实状态解析。bridgeUrl仅在需要固定端口时提供。
 写入使用expected中的generation/epoch/sourceHash和可选executionId，几何与文字执行改用prepare返回的完整guard。
-mode=validate不连接编辑器；mode=prepare只读绑定状态；mode=execute执行原计划并逐项独立读回。几何计划支持原生闭合板框、独立 NPTH/PTH 圆孔/槽孔和带网络端子焊盘；结果统一返回 `workflowReceipt`，执行结果同时返回 `boardDelta`，只有 created/modified/deleted 计为真实板上变化。部分或未知结果附 `recoveryDirective`，调用方只读取 `minimumReadScope`、禁止重放并只续作剩余后缀，随后返回已保存的父 PCB 阶段。
+mode=validate不连接编辑器；mode=prepare只读绑定状态；mode=execute执行原计划并逐项独立读回。`pcb_cleanup_components`使用自己的 preflight/execute 两阶段 guard。几何计划支持原生闭合板框、独立 NPTH/PTH 圆孔/槽孔和带网络端子焊盘；结果统一返回 `workflowReceipt`，执行结果同时返回 `boardDelta`，只有 created/modified/deleted 计为真实板上变化。部分或未知结果附 `recoveryDirective`，调用方只读取 `minimumReadScope`、禁止重放并只续作剩余后缀，随后返回已保存的父 PCB 阶段。
 文件导出写入新路径，不覆盖既有文件。单独源码哈希检查点不是可恢复备份。
 
 ## 默认工具
@@ -21,6 +21,7 @@ mode=validate不连接编辑器；mode=prepare只读绑定状态；mode=execute�
 | `pcb_pick` | 读取 | units*=mil/mm，point，region，offset，limit |
 | `pcb_execute_plan` | 执行/规则 | planPath，plan，mode=validate/prepare/execute，guard；计划操作含 outline.create、hole.create、pad.create/modify/delete、显式铜线/过孔/器件/覆铜；返回 boardDelta/workflowReceipt，错误附 recoveryDirective |
 | `pcb_execute_text_plan` | 执行/规则 | planPath，plan，mode=validate/prepare/execute，guard |
+| `pcb_cleanup_components` | 执行/规则 | mode=preflight/execute，unlockComponents，deleteReferenceDesignators，guard；默认解锁全部组件并只删除挂在真实组件上的 Designator 属性，保护普通字符串、其他属性和组件几何 |
 | `pcb_rebuild_pours` | 执行/规则 | pourIds，allowCollateralRebuild，save |
 | `pcb_read_constraints` | 执行/规则 |  |
 | `pcb_manage_constraint_group` | 执行/规则 | operation*，save |
