@@ -7,7 +7,7 @@
 - `mode=execute`：提交未改动的原计划、guard 和可选 executionId，逐批核对旧对象并读回。
 
 准备后修改计划、文档发生变化或 Bridge/Gateway 重连，旧 guard 作废。重新读取当前对象并准备，不删除旧状态断言。
-生产单批最多24个展开操作。缓存的相同 executionId 只返回原结果，不补跑未确认的后缀。批次中途失败时，返回已验证前缀、失败操作和剩余操作 ID；读取失败对象后只提交剩余后缀，不重放完整计划。
+生产单批支持 1～100 个展开操作。布局/重布局未显式指定 `batchSize` 时，展开操作不超过 100 个就作为一个完整布局轮次执行，超过时按 100 个分批；其他阶段默认 24。缓存的相同 executionId 只返回原结果，不补跑未确认的后缀。批次中途失败时，返回已验证前缀、失败操作和剩余操作 ID；读取失败对象后只提交剩余后缀，不重放完整计划。
 事件覆盖目前为 partial：客户端编辑不是事务，写后读回和源码核对不能省略。
 
 ## 几何与文字数据格式
@@ -75,7 +75,7 @@ PCB MCP 不暴露任意 JavaScript 执行入口。实时 DRC 启停、完整快�
       "INNER_1": ["GND"],
       "INNER_2": ["+5V", "+3V3"]
     },
-    "boardBounds": { "minX": 0, "maxX": 80, "minY": 0, "maxY": 50 },
+    "boardBounds": { "minX": -40, "maxX": 40, "minY": -25, "maxY": 25 },
     "fixedComponents": ["primitive-id-of-J1", "primitive-id-of-H1"],
     "topOnlyExcept": ["primitive-id-of-bottom-connector"]
   }
@@ -123,14 +123,14 @@ PCB MCP 不暴露任意 JavaScript 执行入口。实时 DRC 启停、完整快�
 ```json
 {
   "options": {
-    "batchSize": 24,
+    "batchSize": 100,
     "saveAfterBatch": true,
     "toleranceMil": 0.02
   }
 }
 ```
 
-- `batchSize` 格式接受 1～100，但生产受保护写入最多 24 个展开操作；默认 24，真实超时或响应过大时降低，不因格式上限更高就扩大生产批次。
+- `batchSize` 接受并真实执行 1～100 个展开操作。布局/重布局省略该字段时，执行器把不超过 100 个展开操作作为一个完整布局轮次；其他阶段省略时默认 24。小型少元件板优先一次提交完整布局，大板按功能区使用 40～100；只有真实超时、响应过大或客户端异常时降低到 8～24。
 - `saveAfterBatch` 默认 `true`。每批成功后保存，便于断点恢复。
 - `toleranceMil` 取 `(0, 0.1]`，用于几何读回比较，不是设计间距。
 
@@ -352,7 +352,7 @@ pcb_status
 → 生成本地 plan.json
 → pcb_execute_plan mode=prepare（已含计划校验，无须另行 validate）
 → pcb_execute_plan mode=execute（提交未改变计划与 guard）
-→ 检查 workflowReceipt 与 boardDelta；只有 boardProgressCredited=true 且 visibleBoardChange=true 才报告板上进展
+→ 检查 workflowReceipt、boardDelta 与 padOverlapGate；布局轮次只有 CLEAR/NOT_APPLICABLE 才能进入下一轮
 → CONTINUE_BOARD：记录变化对象并执行下一项板上动作
 → NO_BOARD_CHANGE：只对账一次精确对象，再执行下一项写入或切换独立区域
 → RECONCILE_EXACT_OPERATION：仅按 minimumReadScope 读回，禁止重放，只生成剩余后缀
@@ -373,9 +373,10 @@ pcb_status
 - `remainingOperationIds`：仍需执行的后缀；
 - `boardDelta`：已确认前缀中的真实创建、修改、删除、无变化对象和剩余操作；
 - `workflowReceipt`：是否计入板上进展、允许的读回范围、重放策略、后缀续作方式和返回父阶段要求；
+- `padOverlapGate`：当前布局轮的跨组件焊盘及独立焊盘/过孔侵入检查；`BLOCKED` 或 `UNVERIFIED` 禁止开始下一轮；
 - `nextAction`：要求读取失败对象、生成新 guard 并只执行剩余后缀。
 
-不得把已确认对象放回新计划，也不得使用原 `executionId` 企图补跑。只有 `boardDelta.visibleBoardChange=true` 才能报告本工作块推进了 PCB；`already_exists`、`already_modified`、`already_absent`、validate、prepare、测试和部署均不是板上变化。若结果没有确认变化，仍需读取目标区域后再决定重试或换等价 API/UI 路径。
+不得把已确认对象放回新计划，也不得使用原 `executionId` 企图补跑。只有 `boardDelta.visibleBoardChange=true` 才能报告本工作块推进了 PCB；`already_exists`、`already_modified`、`already_absent`、validate、prepare、测试和部署均不是板上变化。`PAD_OVERLAP_BLOCKED` 无已改前缀时直接返回该错误；已有前缀时返回 `PARTIAL_SUCCESS` 并带 `blockingCause`。两种情况都先修正当前布局轮，不能切到下一轮。若结果没有确认变化，仍需读取目标区域后再决定重试或换等价 API/UI 路径。
 
 ### 7.2 未知结果与暂态连接恢复
 

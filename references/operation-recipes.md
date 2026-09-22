@@ -6,7 +6,7 @@
 
 `pcb_execute_plan(mode="prepare", plan=原计划)`完成结构校验并返回 guard；随后 `mode="execute"`提交同一计划及该 guard。成功后消费工具自带独立读回和 boardDelta，继续下一动作。`validate`只用于离线例子、排查参数或维护工具，不是每次画板必经步骤。
 
-计划长时写入任务目录，用同一 `planPath`准备和执行，避免反复输出完整坐标表。准备后改动计划或目标发生变化，重新准备，不复用旧 guard。
+计划长时写入任务目录，用同一 `planPath`准备和执行，避免反复输出完整坐标表。布局/重布局的小型少元件板应先计算完整布局，再以一个不超过 100 个展开操作的计划提交；大板按功能区组织 40～100 个操作的布局轮次。准备后改动计划或目标发生变化，重新准备，不复用旧 guard。
 
 ## 1. 移动、旋转和翻面
 
@@ -20,7 +20,7 @@
   "units": "mil",
   "phase": "layout",
   "constraints": {"allowedLayers": ["TOP", "BOTTOM", "INNER_1", "INNER_2"]},
-  "options": {"batchSize": 24, "saveAfterBatch": true},
+  "options": {"batchSize": 100, "saveAfterBatch": true},
   "operations": [{
     "id": "move-u1", "type": "component.modify", "primitiveId": "EXAMPLE-COMPONENT",
     "expected": {"designator": "U1", "x": 100, "y": 100, "rotation": 0, "layer": 1, "primitiveLock": false},
@@ -55,7 +55,7 @@
 }
 ```
 
-12/24 mil 即 0.3048/0.6096 mm，可用于采用 0.1 mil 存储网格的客户端；仍遵守项目给定下限。1 mil = 0.0254 mm，不能混用计划单位与原生 API 坐标。`route.create`展开成多段，24 的批次上限指展开后的操作数。
+12/24 mil 即 0.3048/0.6096 mm，可用于采用 0.1 mil 存储网格的客户端；仍遵守项目给定下限。1 mil = 0.0254 mm，不能混用计划单位与原生 API 坐标。`route.create`会展开成多段；显式批次最多 100 个展开操作，普通布线省略 `batchSize` 时仍默认 24。
 
 ## 3. 原生板框和机械孔槽
 
@@ -66,7 +66,7 @@
   "target": {"documentUuid": "EXAMPLE-PCB", "projectUuid": "EXAMPLE-PROJECT", "windowId": "EXAMPLE-WINDOW"},
   "units": "mm",
   "phase": "layout",
-  "options": {"batchSize": 24, "saveAfterBatch": true},
+  "options": {"batchSize": 100, "saveAfterBatch": true},
   "operations": [
     {"id": "outline", "type": "outline.create", "points": [[-15,-10],[15,-10],[15,10],[-15,10]], "width": 0.10, "locked": true},
     {"id": "mount", "type": "hole.create", "position": [-12,-7], "hole": {"type": "ROUND", "diameter": 2.8}, "locked": true},
@@ -89,7 +89,7 @@
   "units": "mm",
   "phase": "layout",
   "constraints": {"minAnnularRing": 0.15},
-  "options": {"batchSize": 24, "saveAfterBatch": true},
+  "options": {"batchSize": 100, "saveAfterBatch": true},
   "operations": [{
     "id": "terminal", "type": "pad.create", "layer": "MULTI", "padNumber": "OUT",
     "position": [15,3], "shape": {"type": "ELLIPSE", "width": 4.0, "height": 4.0},
@@ -122,7 +122,7 @@
 
 ## 保存、位号清理、文字和查错
 
-普通保存用 `pcb_save_and_drc(save=true, runDrc=false)`并携带工具要求的当前 target/expected。布局成形、关键/整板布线、重建实际铜和最终导出四类里程碑使用 `pcb_save_and_drc(save=true, runDrc=true)`；单颗/单线/每小批写入后不重复运行。结果按 [DRC 策略](drc-policy.md)分类，跨组件重叠优先修正，允许豁免仍保留原始项目和理由。
+普通保存用 `pcb_save_and_drc(save=true, runDrc=false)`并携带工具要求的当前 target/expected。每个布局轮次读取 `padOverlapGate`；`BLOCKED/UNVERIFIED` 时只修正本轮，禁止开始下一轮。布局成形、关键/整板布线、重建实际铜和最终导出四类里程碑使用 `pcb_save_and_drc(save=true, runDrc=true)`；单颗/单线/每轮写入后不重复运行整板检查。结果按 [DRC 策略](drc-policy.md)分类，跨组件重叠优先修正，允许豁免仍保留原始项目和理由。
 
 完整 PCB 在首次导入/ECO 后及最终丝印收尾前调用 `pcb_cleanup_components`。先以 `mode="preflight", unlockComponents=true, deleteReferenceDesignators=true`取得 guard，再用同一目标、选项和 guard 调用 `mode="execute"`；状态变化时重新预检。参数名沿用 `deleteReferenceDesignators`，真实客户端动作是把 attached `Designator` 的 `keyVisible/valueVisible` 同时设为 `false`，从板面清除位号丝印，同时保留属性 ID、value、父组件、网络、位置、层、角度和 BOM 身份，也不删除接口功能字等独立字符串。存在用户明确锁定例外时仍必须执行位号丝印清理，但按明确要求处理解锁子项。
 

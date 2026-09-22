@@ -7,7 +7,7 @@
 
 目标工具使用明确windowId/projectUuid/documentUuid，tabId从真实状态解析。bridgeUrl仅在需要固定端口时提供。
 写入使用expected中的generation/epoch/sourceHash和可选executionId，几何与文字执行改用prepare返回的完整guard。
-mode=validate不连接编辑器；mode=prepare只读绑定状态；mode=execute执行原计划并逐项独立读回。`pcb_cleanup_components`使用自己的 preflight/execute 两阶段 guard。几何计划要求新板框以 `[0,0]` 为圆心或包围盒中心；执行期阻止不同组件焊盘重叠及独立焊盘/过孔侵入元件焊盘，翻面或换层后的真实重叠会回滚元件。结果统一返回 `workflowReceipt`，执行结果同时返回 `boardDelta`，只有 created/modified/deleted 计为真实板上变化。部分或未知结果附 `recoveryDirective`，调用方只读取 `minimumReadScope`、禁止重放并只续作剩余后缀，随后返回已保存的父 PCB 阶段。
+mode=validate不连接编辑器；mode=prepare只读绑定状态；mode=execute执行原计划并逐项独立读回。`pcb_cleanup_components`使用自己的 preflight/execute 两阶段 guard。几何计划要求新板框以 `[0,0]` 为圆心或包围盒中心；布局/重布局省略批次时，不超过100个展开操作作为一个完整轮次。执行期阻止不同组件焊盘重叠及独立焊盘/过孔侵入元件焊盘，翻面或换层后的真实重叠会回滚元件，并返回 `padOverlapGate`；未 `CLEAR/NOT_APPLICABLE` 不得进入下一轮。结果统一返回 `workflowReceipt`，执行结果同时返回 `boardDelta`，只有 created/modified/deleted 计为真实板上变化。部分或未知结果附 `recoveryDirective`，调用方只读取 `minimumReadScope`、禁止重放并只续作剩余后缀，随后返回已保存的父 PCB 阶段。
 文件导出写入新路径，不覆盖既有文件。单独源码哈希检查点不是可恢复备份。
 
 ## 默认工具
@@ -19,7 +19,7 @@ mode=validate不连接编辑器；mode=prepare只读绑定状态；mode=execute�
 | `pcb_status` | 目标 | include |
 | `pcb_read` | 读取 | kind*=snapshot/components/pads/lines/polylines/vias/pours/poured/fills/arcs/strings/attributes/regions/bounds/pins/layers/rules/nets/netlist/routeScene，ids，include，net，layer，parentPrimitiveId，region，offset，limit，sceneSection=summary/boardOutline/layers/rules/components/images/padstacks/pads/nets/tracks/vias，layerName |
 | `pcb_pick` | 读取 | units*=mil/mm，point，region，offset，limit |
-| `pcb_execute_plan` | 执行/规则 | planPath，plan，mode=validate/prepare/execute，guard；计划含原点居中板框、孔槽、焊盘、过孔、器件和铜；写入前后阻止跨对象焊盘重叠，返回 boardDelta/workflowReceipt，错误附 recoveryDirective |
+| `pcb_execute_plan` | 执行/规则 | planPath，plan，mode=validate/prepare/execute，guard；布局轮次最多100个展开操作；计划含原点居中板框、孔槽、焊盘、过孔、器件和铜；写入前后阻止跨对象焊盘重叠，返回 padOverlapGate/boardDelta/workflowReceipt，错误附 recoveryDirective |
 | `pcb_execute_text_plan` | 执行/规则 | planPath，plan，mode=validate/prepare/execute，guard |
 | `pcb_cleanup_components` | 执行/规则 | mode=preflight/execute，unlockComponents，deleteReferenceDesignators，guard；默认解锁全部组件并清除位号丝印显示，将 attached Designator 的 keyVisible/valueVisible 设为 false，同时保留其 ID、value、父组件、普通字符串、其他属性和组件几何 |
 | `pcb_rebuild_pours` | 执行/规则 | pourIds，allowCollateralRebuild，save |

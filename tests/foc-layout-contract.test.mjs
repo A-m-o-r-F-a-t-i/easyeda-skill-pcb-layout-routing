@@ -28,7 +28,7 @@ const examplePlans = [...recipes.matchAll(/```json\s*\n([\s\S]*?)\n```/g)]
 test('v5.5 entry is bounded in bytes as well as lines', () => {
   assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.5\.\d+\n---/);
   assert.ok(skill.split('\n').length <= 115);
-  assert.ok(Buffer.byteLength(skill, 'utf8') <= 16500);
+  assert.ok(Buffer.byteLength(skill, 'utf8') <= 18000);
   assert.ok(skill.indexOf('原理图是输入') < 1000);
 });
 
@@ -116,6 +116,16 @@ test('new outlines use the coordinate origin and placement writes reject pad ove
   assert.match(policy, /独立 PTH\/NPTH\/接线焊盘或过孔侵入元件焊盘/);
   assert.match(policy, /双方对象 ID、父组件和网络/);
   assert.match(tools, /翻面或换层后的真实重叠会回滚元件/);
+});
+
+test('small boards may use one coherent placement round and overlap blocks the next round', () => {
+  const technical = read('references/mcp-plan-v2.md');
+  assert.match(skill, /小板一次提交完整布局/);
+  assert.match(skill, /小板一次提交不超过 100 个展开操作/);
+  assert.match(skill, /不得开始下一轮/);
+  assert.match(skill, /`padOverlapGate` 未通过/);
+  assert.match(technical, /生产单批支持 1～100 个展开操作/);
+  assert.match(technical, /其他阶段默认 24/);
 });
 
 test('native DRC completion and full totals are required independently of a detail page', () => {
@@ -227,7 +237,7 @@ test('five complete plan examples retain real safety fields and portable fixture
     assert.equal(plan.schema, 'easyeda-pcb-plan/v2');
     assert.equal(plan.target.documentUuid, 'EXAMPLE-PCB');
     assert.ok(['mm', 'mil'].includes(plan.units));
-    assert.ok(plan.options.batchSize <= 24);
+    assert.ok(plan.options.batchSize <= 100);
     for (const op of plan.operations) types.add(op.type);
   }
   for (const type of ['component.modify', 'route.create', 'via.create', 'outline.create', 'hole.create', 'pad.create', 'pour.create']) {
@@ -239,6 +249,7 @@ test('five complete plan examples retain real safety fields and portable fixture
   assert.equal((Math.min(...xs) + Math.max(...xs)) / 2, 0);
   assert.equal((Math.min(...ys) + Math.max(...ys)) / 2, 0);
   assert.equal(examplePlans[0].operations[0].set.layer, 'BOTTOM');
+  assert.equal(examplePlans[0].options.batchSize, 100);
   assert.equal(examplePlans[0].operations[0].copperPolicy, 'unrouted');
   assert.equal(examplePlans[0].constraints.topOnlyExcept, undefined);
 });
