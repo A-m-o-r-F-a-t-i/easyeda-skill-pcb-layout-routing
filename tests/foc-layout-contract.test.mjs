@@ -28,7 +28,7 @@ const examplePlans = [...recipes.matchAll(/```json\s*\n([\s\S]*?)\n```/g)]
 test('v5.5 entry is bounded in bytes as well as lines', () => {
   assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.5\.\d+\n---/);
   assert.ok(skill.split('\n').length <= 115);
-  assert.ok(Buffer.byteLength(skill, 'utf8') <= 18000);
+  assert.ok(Buffer.byteLength(skill, 'utf8') <= 16500);
   assert.ok(skill.indexOf('原理图是输入') < 1000);
 });
 
