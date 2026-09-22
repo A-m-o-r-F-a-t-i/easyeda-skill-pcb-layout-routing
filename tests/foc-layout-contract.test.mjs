@@ -25,8 +25,8 @@ const recipes = read('references/operation-recipes.md');
 const examplePlans = [...recipes.matchAll(/```json\s*\n([\s\S]*?)\n```/g)]
   .map(match => JSON.parse(match[1]));
 
-test('v5.4.0 entry is bounded in bytes as well as lines', () => {
-  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.4\.0\n---/);
+test('v5.4 entry is bounded in bytes as well as lines', () => {
+  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.4\.\d+\n---/);
   assert.ok(skill.split('\n').length <= 115);
   assert.ok(Buffer.byteLength(skill, 'utf8') <= 16500);
   assert.ok(skill.indexOf('原理图是输入') < 1000);
@@ -105,6 +105,16 @@ test('DRC classification fixes overlap and bounds every waiver', () => {
   assert.match(policy, /`FINAL_DRC` 还要求未布线为零/);
   assert.match(policy, /不能称“DRC 零错误”/);
   assert.match(policy, /关闭实时\/批量规则、放宽间距、改网、隐藏或删除必要对象/);
+});
+
+test('native DRC completion and full totals are required independently of a detail page', () => {
+  for (const evidence of ['drcState="COMPLETED"', 'drcVerified=true', 'drcErrorCount', 'drcSummary']) {
+    assert.ok(skill.includes(evidence), evidence);
+  }
+  assert.match(skill, /`RUNNING` 必须用同一 `drcJobId`、`save=false` 继续读取/);
+  assert.match(skill, /超时、失败、作业丢失或缺少明细均为 `UNVERIFIED`/);
+  assert.match(skill, /分页中的空页不代表零违规/);
+  assert.match(skill, /阶段判定始终使用完整总数与汇总/);
 });
 
 test('power return, switching, bootstrap, decoupling and Kelvin knowledge remains', () => {

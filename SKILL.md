@@ -1,7 +1,7 @@
 ---
 name: easyeda-pcb-layout-routing
 description: 将已确认原理图直接落实为 EasyEDA PCB，或继续现有板的布局、显式布线、铺铜和丝印。信任既有选型、连接和封装，只读取作图所需对象与焊盘网络坐标；按供电回路、信号链和板面要求执行，不重新审查电路、不补查器件手册，并在布局、布线、铺铜和交付节点运行原生 DRC。
-version: 5.4.0
+version: 5.4.2
 ---
 
 # PCB 执行：按确定原理图画板
@@ -41,6 +41,8 @@ version: 5.4.0
 
 必须使用原生 `pcb_save_and_drc(save=true, runDrc=true)`完成 `LAYOUT_DRC`、`ROUTING_DRC`、`POUR_DRC` 和 `FINAL_DRC`。相邻里程碑处于同一未变化板状态时可由一次检查同时满足，但不能让整板只剩最终检查。DRC 验证当前 PCB 的制造与连接，不触发数据手册、额定值、引脚定义、器件选型或外围参数复审。
 
+只有回执同时满足 `drcState="COMPLETED"`、`drcVerified=true`，并给出 `drcErrorCount` 与 `drcSummary`，才算取得本次原生 DRC 结果。`RUNNING` 必须用同一 `drcJobId`、`save=false` 继续读取；超时、失败、作业丢失或缺少明细均为 `UNVERIFIED`。分页中的空页不代表零违规，阶段判定始终使用完整总数与汇总，`drcItemsHasMore=true` 时按需续取明细。
+
 判定顺序以物理问题优先：跨组件焊盘、封装实体或装配外形重叠在布局阶段必须立即修正，即使同网络也不得豁免；确认不存在物理重叠后，同网络焊盘间距报告可记为非阻断；同一未修改且来源可信的嘉立创/EasyEDA 库封装内部报告可记为非阻断；未布线报告只在布线尚未完成时非阻断，`FINAL_DRC` 必须清零。归属、网络或规则含义不明时先检查，不能自动忽略。
 
 “忽略”只表示保留原始 DRC 项并记录豁免原因，不等于关闭或放宽规则、隐藏或删除对象、修改网络，或报告零错误。阶段结果至少分为 `blocking`、`waived` 和 `unresolved`；只有 `blocking=0` 且 `unresolved=0` 才能通过。详细规则见 [DRC 策略](references/drc-policy.md)。
@@ -72,7 +74,7 @@ version: 5.4.0
 | 孔槽/接线端 | `outline.create`、`hole.create`、`pad.create`；已有独立对象不重复创建 |
 | 铺铜/丝印 | `pour.create` 后 `pcb_rebuild_pours`；文字用 `pcb_execute_text_plan` |
 | 普通保存 | `pcb_save_and_drc(save=true, runDrc=false)` |
-| 阶段 DRC | 到四个里程碑调用 `pcb_save_and_drc(save=true, runDrc=true)`并按 DRC 策略分类 |
+| 阶段 DRC | 到四个里程碑调用 `pcb_save_and_drc(save=true, runDrc=true)`；若返回 `RUNNING`，沿用 `drcJobId` 续取至 `COMPLETED`，再按完整汇总分类 |
 | 最终检查/导出 | `FINAL_DRC`通过后 `pcb_export(kind="backup"/"gerber"/"bom"/"pick_place", ...)` |
 
 每次原理图首次导入/ECO 后，以及最终丝印收尾前，必须执行 `pcb_cleanup_components`：清除全部挂在真实组件上的位号丝印显示，并在没有用户明确锁定例外时解锁全部组件。真实客户端会保留 `Designator` 作为组件身份，工具只把其 `keyVisible/valueVisible` 同时设为 `false`，不得删除属性本体或改写 value。执行后必须确认 `allComponentsUnlocked`、`allComponentDesignatorSilkscreenRemoved`、`componentDesignatorIdentityPreserved`、`independentStringsUnchanged`、`nonDesignatorAttributesUnchanged` 和 `componentIdentityAndGeometryUnchanged`；预检后状态变化就重新预检，不能复用旧 guard。具体可复用字段与示例见 [操作速查](references/operation-recipes.md)。首次使用某工具时读一次当前 Schema，后续复用；参数变化或真实契约错误才重新查询。工具的目标/旧状态保护保留，模型不重复实现它的校验器。

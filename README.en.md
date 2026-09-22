@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | English
 
-This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.4.0**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
+This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.4.2**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
 
 ## Core principles
 
