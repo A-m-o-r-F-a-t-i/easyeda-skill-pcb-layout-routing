@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | English
 
-This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.5.2**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
+This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.5.3**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
 
 ## Core principles
 
@@ -12,7 +12,7 @@ This repository contains execution guidance for AI agents working on production-
 - Prefer copper areas or wide copper for high-current regions when isolation and return paths remain sound; do not replace pourable regions with many narrow traces.
 - Do not use automatic routing. Route explicitly and resolve congestion by improving placement and orientation.
 - Treat native DRC as a mandatory PCB milestone at coherent placement, critical/full routing, repour, and final release, without rescanning the whole board after every object or trace.
-- Center each new board outline on the coordinate origin. Never overlap pads owned by different components or place standalone large pads/vias over component pads. During placement DRC, investigate spacing findings for physical overlap before considering any same-net waiver.
+- Anchor each new outline to the origin: use `[0,0]` as a circle center or an explicit polygon vertex. A rectangle may use the origin as one corner with adjacent edges on the X/Y axes. Never overlap pads owned by different components or place standalone pads/vias over component pads.
 - Compute a small low-component board as one complete placement and submit it as one round of at most 100 expanded operations. Partition larger boards by functional region, and do not start the next round until the current overlap gate passes.
 - Keep ordinary components unlocked by default. During full-board finishing, remove all visible reference-designator silkscreen while preserving the mandatory `Designator` identity attributes, BOM linkage, and functional text.
 - Make silkscreen readable at real manufacturing scale. Connector names, pin order, and net meaning take priority over low-value reference text.

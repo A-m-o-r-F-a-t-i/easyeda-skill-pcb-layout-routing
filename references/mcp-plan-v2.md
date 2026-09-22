@@ -1,4 +1,4 @@
-# MCP 2.3 执行入口
+# MCP 2.5 执行入口
 
 几何数据格式继续使用 easyeda-pcb-plan/v2，文字格式继续使用 easyeda-pcb-text-plan/v1。生产公开入口合并了验证与执行。approved_schematic 正常画板使用 prepare → execute；prepare 已包含计划格式校验，validate 仅用于离线验证或参数排错。此处的格式/状态校验不是电气性能审查。
 
@@ -14,7 +14,7 @@
 
 # easyeda-pcb-mcp 与 `easyeda-pcb-plan/v2`
 
-`easyeda-pcb-mcp`是PCB专用执行层。它负责读取当前PCB、校验并执行显式板框、独立孔槽/焊盘、铜/文字计划、重建覆铜、管理约束、受保护导入原理图变更、逐项读回、保存和批量DRC。它不负责电路设计、自动布局、自动寻路或自动布线。完整2.5.0生产工具路由见[工具索引](tool-index.md)。
+`easyeda-pcb-mcp`是PCB专用执行层。它负责读取当前PCB、校验并执行显式板框、独立孔槽/焊盘、铜/文字计划、重建覆铜、管理约束、受保护导入原理图变更、逐项读回、保存和批量DRC。它不负责电路设计、自动布局、自动寻路或自动布线。完整2.5.1生产工具路由见[工具索引](tool-index.md)。
 
 ## 1. MCP 工具边界
 
@@ -75,7 +75,7 @@ PCB MCP 不暴露任意 JavaScript 执行入口。实时 DRC 启停、完整快�
       "INNER_1": ["GND"],
       "INNER_2": ["+5V", "+3V3"]
     },
-    "boardBounds": { "minX": -40, "maxX": 40, "minY": -25, "maxY": 25 },
+    "boardBounds": { "minX": 0, "maxX": 80, "minY": 0, "maxY": 50 },
     "fixedComponents": ["primitive-id-of-J1", "primitive-id-of-H1"],
     "topOnlyExcept": ["primitive-id-of-bottom-connector"]
   }
@@ -228,13 +228,13 @@ PCB MCP 不暴露任意 JavaScript 执行入口。实时 DRC 启停、完整快�
 {
   "id": "outline-main",
   "type": "outline.create",
-  "points": [[-40, -25], [40, -25], [40, 25], [-40, 25]],
+  "points": [[0, 0], [80, 0], [80, 50], [0, 50]],
   "width": 0.10,
   "locked": true
 }
 ```
 
-新建圆形板框必须以 `[0,0]` 为圆心；新建多边形板框的包围盒中心必须为 `[0,0]`。执行器把点列编译为一个原生闭合 `PrimitivePolyline` 并独立读取其 polygon 源数据；不会展开成大量普通直线。修改既有板框前先读取旧 Polyline 并精确删除或重建，避免生成重叠轮廓。
+新建圆形板框必须以 `[0,0]` 为圆心；新建多边形板框只需有一个显式顶点为 `[0,0]`，不要求几何中心或包围盒中心位于原点。异形多边形可从该锚点向任意方向展开；轴对齐长方形可把原点作为角点，使相邻两边分别落在 X、Y 轴上。执行器把点列编译为一个原生闭合 `PrimitivePolyline` 并独立读取其 polygon 源数据；修改既有板框时沿用同一锚定规则，非几何属性修改不会移动旧板框。
 
 ### 5.7 铺铜边界
 

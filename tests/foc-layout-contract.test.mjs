@@ -67,7 +67,7 @@ test('ordinary components stay unlocked and reference-designator displays are re
   assert.match(skill, /keyVisible\/valueVisible/);
   assert.match(skill, /independentStringsUnchanged/);
   const tools = read('references/tool-index.md');
-  assert.match(tools, /实际 2\.5\.0 注册表/);
+  assert.match(tools, /实际 2\.5\.1 注册表/);
   assert.match(tools, /默认21工具/);
   assert.match(tools, /`pcb_cleanup_components`/);
   const silk = read('references/silkscreen-usability.md');
@@ -107,10 +107,13 @@ test('DRC classification fixes overlap and bounds every waiver', () => {
   assert.match(policy, /关闭实时\/批量规则、放宽间距、改网、隐藏或删除必要对象/);
 });
 
-test('new outlines use the coordinate origin and placement writes reject pad overlap', () => {
+test('new outlines anchor to the coordinate origin and placement writes reject pad overlap', () => {
   const policy = read('references/drc-policy.md');
   const tools = read('references/tool-index.md');
-  assert.match(skill, /新板框以坐标原点 `\[0,0\]` 为几何中心/);
+  assert.match(skill, /圆形用 `\[0,0\]` 圆心；多边形含 `\[0,0\]` 顶点/);
+  assert.match(skill, /长方形原点角两边沿 X\/Y 轴/);
+  assert.match(read('references/mcp-plan-v2.md'), /异形多边形可从该锚点向任意方向展开/);
+  assert.match(read('references/mcp-plan-v2.md'), /不要求几何中心或包围盒中心位于原点/);
   assert.match(skill, /不同元件焊盘、独立大焊盘\/过孔与元件焊盘不得重叠/);
   assert.match(skill, /`PAD_OVERLAP_BLOCKED` 表示布局需重排/);
   assert.match(policy, /独立 PTH\/NPTH\/接线焊盘或过孔侵入元件焊盘/);
@@ -244,10 +247,9 @@ test('five complete plan examples retain real safety fields and portable fixture
     assert.ok(types.has(type), type);
   }
   const outline = examplePlans.flatMap(plan => plan.operations).find(operation => operation.type === 'outline.create');
-  const xs = outline.points.map(point => point[0]);
-  const ys = outline.points.map(point => point[1]);
-  assert.equal((Math.min(...xs) + Math.max(...xs)) / 2, 0);
-  assert.equal((Math.min(...ys) + Math.max(...ys)) / 2, 0);
+  assert.deepEqual(outline.points[0], [0, 0]);
+  assert.equal(outline.points[1][1], 0);
+  assert.equal(outline.points.at(-1)[0], 0);
   assert.equal(examplePlans[0].operations[0].set.layer, 'BOTTOM');
   assert.equal(examplePlans[0].options.batchSize, 100);
   assert.equal(examplePlans[0].operations[0].copperPolicy, 'unrouted');

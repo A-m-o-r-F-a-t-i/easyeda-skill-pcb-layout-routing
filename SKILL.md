@@ -1,7 +1,7 @@
 ---
 name: easyeda-pcb-layout-routing
 description: 将已确认原理图直接落实为 EasyEDA PCB，或继续现有板的布局、显式布线、铺铜和丝印。信任既有选型、连接和封装，只读取作图所需对象与焊盘网络坐标；按供电回路、信号链和板面要求执行，不重新审查电路、不补查器件手册，并在布局、布线、铺铜和交付节点运行原生 DRC。
-version: 5.5.2
+version: 5.5.3
 ---
 
 # PCB 执行：按确定原理图画板
@@ -27,7 +27,7 @@ version: 5.5.2
 | 当前工作 | 直接动作 | 需要读取的最少数据 |
 | --- | --- | --- |
 | 接手 PCB | 锁定唯一目标；空白板导入已关联原理图，已有 PCB 接着画 | 文档身份、单位、现场机械对象和本次要改的对象 |
-| 建板框 | 新板框以坐标原点 `[0,0]` 为几何中心（圆心或多边形包围盒中心），尺寸用正负半尺寸表达；再建孔槽、禁区和层分工 | 已存在同类对象 |
+| 建板框 | 圆形用 `[0,0]` 圆心；多边形含 `[0,0]` 顶点，长方形原点角两边沿 X/Y 轴；再建孔槽、禁区和层分工 | 已存在同类对象 |
 | 放模块 | 小板一次提交完整布局，大板按功能区分轮；不同元件焊盘、独立大焊盘/过孔与元件焊盘不得重叠，每轮重叠门通过后再继续，成形后做 `LAYOUT_DRC` | 本轮旧值、轮廓、焊盘和连接 |
 | 走线 | 先按网络组规划通道和功率铜骨架，再落关键回路及剩余网络；到关键/整板布线节点做 `ROUTING_DRC` | 对应网络组的焊盘坐标/层/网络、附近障碍和现有规则 |
 | 收尾 | 批量解锁普通组件并清除全部组件位号丝印显示，再重建铺铜、完善回流、功能丝印及测试点；做 `POUR_DRC` | 本次改变的组件锁定、铜区、网络和文字 |
@@ -71,7 +71,7 @@ version: 5.5.2
 | 读取本批 | `pcb_read(kind="components", ids=[...])`；属性只取必要对象；`pcb_inspect_pinmap(componentIds=[...])`用于取得作图端点，不用于复审芯片 |
 | 移动/翻面/布线 | `pcb_execute_plan`；操作用 `component.modify`、`route.create`、`via.create` |
 | 解锁/删位号 | `pcb_cleanup_components`；先 `mode="preflight"`，再以原 guard 执行 `mode="execute"`；默认 `unlockComponents=true, deleteReferenceDesignators=true` |
-| 板框/孔槽/接线端 | `outline.create` 的新板框以 `[0,0]` 为中心；`hole.create`、`pad.create` 不得侵入元件焊盘；已有对象不重复创建 |
+| 板框/孔槽/接线端 | `outline.create`：圆心或多边形顶点锚定 `[0,0]`；`hole.create`、`pad.create` 不得侵入元件焊盘；已有对象不重复创建 |
 | 铺铜/丝印 | `pour.create` 后 `pcb_rebuild_pours`；文字用 `pcb_execute_text_plan` |
 | 普通保存 | `pcb_save_and_drc(save=true, runDrc=false)` |
 | 阶段 DRC | 到四个里程碑调用 `pcb_save_and_drc(save=true, runDrc=true)`；若返回 `RUNNING`，沿用 `drcJobId` 续取至 `COMPLETED`，再按完整汇总分类 |
@@ -81,7 +81,7 @@ version: 5.5.2
 
 ## 写入和恢复
 
-输入显式指定 mil 或 mm，1 mil = 0.0254 mm。新板框以 `[0,0]` 为几何中心；API 读回为作图坐标，翻面旋转交给元件接口。移动后使用真实新焊盘坐标，不手算镜像。`PAD_OVERLAP_BLOCKED` 表示布局需重排，不能绕过守卫或把同网当作豁免。
+输入指定 mil 或 mm，1 mil = 0.0254 mm。圆形以 `[0,0]` 为圆心，多边形以 `[0,0]` 顶点锚定。API 读回为作图坐标，翻面旋转交给元件接口。移动后使用真实新焊盘坐标，不手算镜像。`PAD_OVERLAP_BLOCKED` 表示布局需重排，不能绕过守卫或把同网当作豁免。
 
 计划绑定精确目标，`expected`来自当前对象，`prepare`返回的 guard 原样用于未改动计划的 `execute`。普通元件只改变位置、角度和层，不改网络且默认解锁；除非用户明确要求，不能在 `set` 中写 `primitiveLock:true`。未布铜用 `copperPolicy:"unrouted"`；已有铜用 `"replan"`并处理受影响旧铜。布局/重布局省略 `batchSize` 时，小板一次提交不超过 100 个展开操作，大板按功能区分轮；每轮 `padOverlapGate` 通过后继续。布线默认 24 个，真实超时或响应过大时再缩批。每轮不额外跑全板 pinmap/DRC，达到阶段门必须运行原生 DRC。
 

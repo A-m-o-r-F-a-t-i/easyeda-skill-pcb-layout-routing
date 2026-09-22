@@ -68,14 +68,14 @@
   "phase": "layout",
   "options": {"batchSize": 100, "saveAfterBatch": true},
   "operations": [
-    {"id": "outline", "type": "outline.create", "points": [[-15,-10],[15,-10],[15,10],[-15,10]], "width": 0.10, "locked": true},
-    {"id": "mount", "type": "hole.create", "position": [-12,-7], "hole": {"type": "ROUND", "diameter": 2.8}, "locked": true},
-    {"id": "tie-slot", "type": "hole.create", "position": [0,-5], "hole": {"type": "SLOT", "diameter": 2, "length": 5}, "rotation": 90, "locked": true}
+    {"id": "outline", "type": "outline.create", "points": [[0,0],[30,0],[30,20],[0,20]], "width": 0.10, "locked": true},
+    {"id": "mount", "type": "hole.create", "position": [3,3], "hole": {"type": "ROUND", "diameter": 2.8}, "locked": true},
+    {"id": "tie-slot", "type": "hole.create", "position": [15,5], "hole": {"type": "SLOT", "diameter": 2, "length": 5}, "rotation": 90, "locked": true}
   ]
 }
 ```
 
-新板框以坐标原点为几何中心：圆形使用 `[0,0]` 圆心，多边形使用关于原点对称的包围盒。板框创建为原生闭合 Polyline；外形点列不是铜走线的转角规则。圆角槽用 `hole.type=SLOT`、孔宽 `diameter`、总长 `length`；整体方向用 `rotation`。安装孔/槽由工具设为空网络、MULTI、非金属化，不用过孔代替。
+新板框以坐标原点锚定：圆形使用 `[0,0]` 圆心，多边形包含一个 `[0,0]` 顶点；长方形可让原点角的相邻两边沿 X、Y 轴。异形板不要求几何中心位于原点。板框创建为原生闭合 Polyline；外形点列不受铜走线转角规则限制。圆角槽用 `hole.type=SLOT`、孔宽 `diameter`、总长 `length`，整体方向用 `rotation`。
 
 只创建尚不存在的对象。结果未知先查同一位置对象，保留已确认的板框/孔，不重放整组机械计划。孔周禁布有独立格式，必要时看 [机械禁布](keepout-plan.md)，不把绘制参考圆当成禁布。
 
