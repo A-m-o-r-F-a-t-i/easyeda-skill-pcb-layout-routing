@@ -1,0 +1,129 @@
+# PCB 操作速查
+
+本页用于 `approved_schematic` 的作图，不用于电路或元件审查。示例 ID、位号、网络和坐标均为占位数据，实际执行时替换为当前对象；读取结果已有就复用，不为套示例重新遍历元件。
+
+## 通常只需两次执行调用
+
+`pcb_execute_plan(mode="prepare", plan=原计划)`完成结构校验并返回 guard；随后 `mode="execute"`提交同一计划及该 guard。成功后消费工具自带独立读回和 boardDelta，继续下一动作。`validate`只用于离线例子、排查参数或维护工具，不是每次画板必经步骤。
+
+计划长时写入任务目录，用同一 `planPath`准备和执行，避免反复输出完整坐标表。准备后改动计划或目标发生变化，重新准备，不复用旧 guard。
+
+## 1. 移动、旋转和翻面
+
+组件旧值来自 `pcb_read(kind="components", ids=[...])`或缓存；`affectedNets`来自已有连接索引，缺少时只取该组件焊盘网络。它是旧铜处理范围，不是检查芯片引脚定义是否正确。
+
+```json
+{
+  "schema": "easyeda-pcb-plan/v2",
+  "intent": "把未布线模块中的器件移到指定面并保留网络",
+  "target": {"documentUuid": "EXAMPLE-PCB", "projectUuid": "EXAMPLE-PROJECT", "windowId": "EXAMPLE-WINDOW"},
+  "units": "mil",
+  "phase": "layout",
+  "constraints": {"allowedLayers": ["TOP", "BOTTOM", "INNER_1", "INNER_2"]},
+  "options": {"batchSize": 24, "saveAfterBatch": true},
+  "operations": [{
+    "id": "move-u1", "type": "component.modify", "primitiveId": "EXAMPLE-COMPONENT",
+    "expected": {"designator": "U1", "x": 100, "y": 100, "rotation": 0, "layer": 1, "primitiveLock": false},
+    "set": {"x": 1200, "y": 1000, "rotation": 90, "layer": "BOTTOM"},
+    "copperPolicy": "unrouted",
+    "affectedNets": ["SPI_CLK", "+3.3", "GND"]
+  }]
+}
+```
+
+未布铜用 `unrouted`，已有铜用 `replan`并重规划受影响旧铜。`expected`采用返回的数值层和旧值，`set.layer`使用命名层。没有“其余全部顶层”的要求就不要添加 `topOnlyExcept`，否则它会阻止正常底面布局。
+
+底面镜像交给元件接口，不自行变换焊盘网络。移动后新焊盘坐标已有返回就复用，缺少时只读本批；不重新复核原理图或器件手册。普通组件保持未锁定，方便后续调整。
+
+## 2. 显式走线与换层
+
+下例点列明确给出水平与 45° 倒角，不自动寻路。表贴焊盘从自身所在层起线，不能在另一层同坐标画线就宣称接通。
+
+```json
+{
+  "schema": "easyeda-pcb-plan/v2",
+  "intent": "沿已选通道布置信号并在终点换层",
+  "target": {"documentUuid": "EXAMPLE-PCB", "projectUuid": "EXAMPLE-PROJECT", "windowId": "EXAMPLE-WINDOW"},
+  "units": "mm",
+  "phase": "route",
+  "constraints": {"noRightAngle": true, "minTrackWidth": 0.15, "minViaHole": 0.30, "minAnnularRing": 0.15, "allowedLayers": ["TOP", "BOTTOM", "INNER_1", "INNER_2"]},
+  "options": {"batchSize": 24, "saveAfterBatch": true},
+  "operations": [
+    {"id": "route-sig", "type": "route.create", "net": "SIG", "layer": "BOTTOM", "points": [[10,10],[12,10],[13,11],[16,11]], "width": 0.20},
+    {"id": "via-sig", "type": "via.create", "net": "SIG", "position": [16,11], "holeDiameter": 0.3048, "diameter": 0.6096}
+  ]
+}
+```
+
+12/24 mil 即 0.3048/0.6096 mm，可用于采用 0.1 mil 存储网格的客户端；仍遵守项目给定下限。1 mil = 0.0254 mm，不能混用计划单位与原生 API 坐标。`route.create`展开成多段，24 的批次上限指展开后的操作数。
+
+## 3. 原生板框和机械孔槽
+
+```json
+{
+  "schema": "easyeda-pcb-plan/v2",
+  "intent": "按给定几何创建闭合板框、安装孔及线束槽",
+  "target": {"documentUuid": "EXAMPLE-PCB", "projectUuid": "EXAMPLE-PROJECT", "windowId": "EXAMPLE-WINDOW"},
+  "units": "mm",
+  "phase": "layout",
+  "options": {"batchSize": 24, "saveAfterBatch": true},
+  "operations": [
+    {"id": "outline", "type": "outline.create", "points": [[0,0],[30,0],[30,20],[0,20]], "width": 0.10, "locked": true},
+    {"id": "mount", "type": "hole.create", "position": [3,3], "hole": {"type": "ROUND", "diameter": 2.8}, "locked": true},
+    {"id": "tie-slot", "type": "hole.create", "position": [15,5], "hole": {"type": "SLOT", "diameter": 2, "length": 5}, "rotation": 90, "locked": true}
+  ]
+}
+```
+
+板框创建为原生闭合 Polyline；外形点列不是铜走线的转角规则。圆形轮廓按给定圆心半径生成闭环点列，不拆成大量独立线段。圆角槽用 `hole.type=SLOT`、孔宽 `diameter`、总长 `length`；整体方向用 `rotation`。安装孔/槽由工具设为空网络、MULTI、非金属化，不用过孔代替。
+
+只创建尚不存在的对象。结果未知先查同一位置对象，保留已确认的板框/孔，不重放整组机械计划。孔周禁布有独立格式，必要时看 [机械禁布](keepout-plan.md)，不把绘制参考圆当成禁布。
+
+## 4. 已授权的独立接线焊盘
+
+```json
+{
+  "schema": "easyeda-pcb-plan/v2",
+  "intent": "为已有输出网络增加专用镀通接线端",
+  "target": {"documentUuid": "EXAMPLE-PCB", "projectUuid": "EXAMPLE-PROJECT", "windowId": "EXAMPLE-WINDOW"},
+  "units": "mm",
+  "phase": "layout",
+  "constraints": {"minAnnularRing": 0.15},
+  "options": {"batchSize": 24, "saveAfterBatch": true},
+  "operations": [{
+    "id": "terminal", "type": "pad.create", "layer": "MULTI", "padNumber": "OUT",
+    "position": [15,3], "shape": {"type": "ELLIPSE", "width": 4.0, "height": 4.0},
+    "net": "OUT", "hole": {"type": "ROUND", "diameter": 2.0}, "metallization": true, "locked": false
+  }]
+}
+```
+
+原网络必须存在并且用户允许该端点。不要改网表或用 MOS/采样电阻焊盘冒充外接端。同网络同位置的重复焊盘不重复计数。SMD 焊盘无钻孔且在 TOP/BOTTOM；带镀通孔用 MULTI；NPTH 不带网络。
+
+## 5. 铺铜边界
+
+```json
+{
+  "schema": "easyeda-pcb-plan/v2",
+  "intent": "创建指定区域的地铜边界，随后由重铺工具生成填充",
+  "target": {"documentUuid": "EXAMPLE-PCB", "projectUuid": "EXAMPLE-PROJECT", "windowId": "EXAMPLE-WINDOW"},
+  "units": "mm",
+  "phase": "finish",
+  "options": {"batchSize": 24, "saveAfterBatch": true},
+  "operations": [{
+    "id": "pour-gnd", "type": "pour.create", "net": "GND", "layer": "BOTTOM",
+    "points": [[1,1],[29,1],[29,19],[1,19]], "pourName": "BOTTOM_GND",
+    "priorityPolicy": "native", "preserveSilos": false, "width": 0.00508, "locked": false
+  }]
+}
+```
+
+这只创建边界，之后 `pcb_rebuild_pours`产生实际铜。`width`是边界显示线宽，不是载流宽度。`priorityPolicy:native`时不同时填写数字 priority。实际铜颈和回流在收尾查看，不因此重新审查器件耐压或温升。
+
+## 保存、文字和查错
+
+普通保存用 `pcb_save_and_drc(save=true, runDrc=false)`并携带工具要求的当前 target/expected。完成布线、铺铜、丝印后才 `runDrc=true`；保存不必重新读全板或组合验收。
+
+文字使用 `pcb_execute_text_plan`，独立功能文字与组件属性显隐分开。删除可见位号只改显隐，不能改 Designator 身份。该工具首次使用时加载它的当前 Schema，不加载全套 PCB 工具表。
+
+真正的 Schema 错误只查对应字段；准备过期就更新受影响旧值并重新 prepare；未知写入结果按 recoveryDirective 对账精确对象，只续未完成后缀。不要把 validate/prepare/服务恢复报告成 PCB 写入。

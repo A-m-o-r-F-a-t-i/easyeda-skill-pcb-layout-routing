@@ -1,0 +1,29 @@
+schema: easyeda-board-intent/v2
+mode: approved_schematic
+# 只填已有输入和当前作图决定，不建立电气复审或高度/气隙待办。
+target: {}
+scope: full_board
+mechanical:
+  boardOutline: {}
+  mountingHoles: []
+  slotsAndCutouts: []
+  keepouts: []
+  givenDimensions: {}
+  faceAssignments: {}
+  interfaceDirections: {}
+stackup: {}
+routing:
+  netRules: {}
+  powerLoops: []
+  signalChains: []
+  noRightAngle: true
+placement:
+  userFixedObjects: []
+  modules: []
+  pcbOnlyObjects: []
+usability:
+  interfacePinLabelsRequired: true
+release:
+  requiredArtifacts: []
+nextBoardAction: null
+actualToolBlockers: []
