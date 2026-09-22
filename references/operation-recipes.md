@@ -124,8 +124,8 @@
 
 普通保存用 `pcb_save_and_drc(save=true, runDrc=false)`并携带工具要求的当前 target/expected。完成布线、铺铜、丝印后才 `runDrc=true`；保存不必重新读全板或组合验收。
 
-完整 PCB 在首次导入/ECO 后及最终丝印收尾前调用 `pcb_cleanup_components`。先以 `mode="preflight", unlockComponents=true, deleteReferenceDesignators=true`取得 guard，再用同一目标、选项和 guard 调用 `mode="execute"`；状态变化时重新预检。它删除的是挂在组件上的 `Designator` 显示属性，不改组件自身 designator、网络、位置、层、角度或 BOM 身份，也不删除接口功能字等独立字符串。存在用户明确锁定例外时仍必须执行位号删除，但按明确要求处理解锁子项。
+完整 PCB 在首次导入/ECO 后及最终丝印收尾前调用 `pcb_cleanup_components`。先以 `mode="preflight", unlockComponents=true, deleteReferenceDesignators=true`取得 guard，再用同一目标、选项和 guard 调用 `mode="execute"`；状态变化时重新预检。参数名沿用 `deleteReferenceDesignators`，真实客户端动作是把 attached `Designator` 的 `keyVisible/valueVisible` 同时设为 `false`，从板面清除位号丝印，同时保留属性 ID、value、父组件、网络、位置、层、角度和 BOM 身份，也不删除接口功能字等独立字符串。存在用户明确锁定例外时仍必须执行位号丝印清理，但按明确要求处理解锁子项。
 
-执行成功必须检查 `allComponentsUnlocked`、`allComponentDesignatorsDeleted`、`independentStringsUnchanged`、`nonDesignatorAttributesUnchanged` 和 `componentIdentityAndGeometryUnchanged`。功能文字使用 `pcb_execute_text_plan`；不能把 `Designator.value` 改成功能名，也不能按 `R1/U1/C1` 字符串猜测并批量删除普通文字。该工具首次使用时加载它的当前 Schema，不加载全套 PCB 工具表。
+执行成功必须检查 `allComponentsUnlocked`、`allComponentDesignatorSilkscreenRemoved`、`componentDesignatorIdentityPreserved`、`independentStringsUnchanged`、`nonDesignatorAttributesUnchanged` 和 `componentIdentityAndGeometryUnchanged`。功能文字使用 `pcb_execute_text_plan`；不能删除属性本体、不能把 `Designator.value` 改成功能名，也不能按 `R1/U1/C1` 字符串猜测并批量清理普通文字。该工具首次使用时加载它的当前 Schema，不加载全套 PCB 工具表。
 
 真正的 Schema 错误只查对应字段；准备过期就更新受影响旧值并重新 prepare；未知写入结果按 recoveryDirective 对账精确对象，只续未完成后缀。不要把 validate/prepare/服务恢复报告成 PCB 写入。

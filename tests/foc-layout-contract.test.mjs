@@ -24,8 +24,8 @@ const recipes = read('references/operation-recipes.md');
 const examplePlans = [...recipes.matchAll(/```json\s*\n([\s\S]*?)\n```/g)]
   .map(match => JSON.parse(match[1]));
 
-test('v5.3 entry is bounded in bytes as well as lines', () => {
-  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.3\.0\n---/);
+test('v5.3.1 entry is bounded in bytes as well as lines', () => {
+  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.3\.1\n---/);
   assert.ok(skill.split('\n').length <= 110);
   assert.ok(Buffer.byteLength(skill, 'utf8') <= 15000);
   assert.ok(skill.indexOf('原理图是输入') < 1000);
@@ -60,16 +60,19 @@ test('ordinary components stay unlocked and reference-designator displays are re
   assert.match(skill, /primitiveLock:false/);
   assert.match(skill, /不能在 `set` 中写 `primitiveLock:true`/);
   assert.match(skill, /必须执行 `pcb_cleanup_components`/);
-  assert.match(skill, /allComponentDesignatorsDeleted/);
+  assert.match(skill, /allComponentDesignatorSilkscreenRemoved/);
+  assert.match(skill, /componentDesignatorIdentityPreserved/);
+  assert.match(skill, /keyVisible\/valueVisible/);
   assert.match(skill, /independentStringsUnchanged/);
   const tools = read('references/tool-index.md');
-  assert.match(tools, /实际 2\.4\.7 注册表/);
+  assert.match(tools, /实际 2\.4\.8 注册表/);
   assert.match(tools, /默认21工具/);
   assert.match(tools, /`pcb_cleanup_components`/);
   const silk = read('references/silkscreen-usability.md');
-  assert.match(silk, /默认删除全部组件位号显示属性/);
+  assert.match(silk, /默认清除全部组件位号丝印显示/);
   assert.match(silk, /不能按文字外观或坐标猜测/);
-  assert.doesNotMatch([skill, silk, read('references/live-collaboration.md')].join('\n'), /默认保留位号|位号隐藏通过显隐设置/);
+  assert.match(silk, /Designator 的 ID\/value/);
+  assert.doesNotMatch([skill, silk, read('references/live-collaboration.md')].join('\n'), /默认保留位号|删除全部挂在真实组件上的 `Designator` 属性|不能只隐藏/);
 });
 
 test('normal execution goes directly from prepare to execute', () => {

@@ -1,6 +1,6 @@
 # PCB MCP 工具索引
 
-由实际 2.4.7 注册表生成。默认21工具；诊断 profile 仅3工具，legacy 为30工具且仅用于独立兼容回归。
+由实际 2.4.8 注册表生成。默认21工具；诊断 profile 仅3工具，legacy 为30工具且仅用于独立兼容回归。
 星号表示必填参数，具体结构以动态Tool Schema为准。本表按需加载，不要求每项任务调用所有工具。
 
 ## 共同契约
@@ -21,7 +21,7 @@ mode=validate不连接编辑器；mode=prepare只读绑定状态；mode=execute�
 | `pcb_pick` | 读取 | units*=mil/mm，point，region，offset，limit |
 | `pcb_execute_plan` | 执行/规则 | planPath，plan，mode=validate/prepare/execute，guard；计划操作含 outline.create、hole.create、pad.create/modify/delete、显式铜线/过孔/器件/覆铜；返回 boardDelta/workflowReceipt，错误附 recoveryDirective |
 | `pcb_execute_text_plan` | 执行/规则 | planPath，plan，mode=validate/prepare/execute，guard |
-| `pcb_cleanup_components` | 执行/规则 | mode=preflight/execute，unlockComponents，deleteReferenceDesignators，guard；默认解锁全部组件并只删除挂在真实组件上的 Designator 属性，保护普通字符串、其他属性和组件几何 |
+| `pcb_cleanup_components` | 执行/规则 | mode=preflight/execute，unlockComponents，deleteReferenceDesignators，guard；默认解锁全部组件并清除位号丝印显示，将 attached Designator 的 keyVisible/valueVisible 设为 false，同时保留其 ID、value、父组件、普通字符串、其他属性和组件几何 |
 | `pcb_rebuild_pours` | 执行/规则 | pourIds，allowCollateralRebuild，save |
 | `pcb_read_constraints` | 执行/规则 |  |
 | `pcb_manage_constraint_group` | 执行/规则 | operation*，save |
