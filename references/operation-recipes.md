@@ -4,9 +4,11 @@
 
 ## 通常只需两次执行调用
 
-`pcb_execute_plan(mode="prepare", plan=原计划)`完成结构校验并返回 guard；随后 `mode="execute"`提交同一计划及该 guard。成功后消费工具自带独立读回和 boardDelta，继续下一动作。`validate`只用于离线例子、排查参数或维护工具，不是每次画板必经步骤。
+`pcb_execute_plan(mode="prepare", plan=原计划)`完成结构校验与整批候选几何预检并返回 guard；随后 `mode="execute"`提交同一计划及该 guard。成功后消费工具自带独立读回和 boardDelta，继续下一动作。`validate`只用于离线例子、排查参数或维护工具，不是每次画板必经步骤。
 
 计划长时写入任务目录，用同一 `planPath`准备和执行，避免反复输出完整坐标表。布局/重布局的小型少元件板应先计算完整布局，再以一个不超过 100 个展开操作的计划提交；大板按功能区组织 40～100 个操作的布局轮次。准备后改动计划或目标发生变化，重新准备，不复用旧 guard。
+
+缺完整旧值、fillMode 或 affectedNets 时，可先 `mode="build"`，由当前原生对象补齐并返回显式 plan；不会替你决定位置、走线、孔径或改写已给断言，完整计划无需额外 build。单位仍由调用方指定，planPath 必须绝对路径。准备会用计划的 minClearance/minHoleClearance 查整批候选，发现阻断零写入；未填写这些下限只检查重叠，不能宣称满足原生规则。跨层翻面先独立完成，取得真实新焊盘后再计划铜。
 
 ## 1. 移动、旋转和翻面
 
@@ -128,4 +130,6 @@
 
 执行成功必须检查 `allComponentsUnlocked`、`allComponentDesignatorSilkscreenRemoved`、`componentDesignatorIdentityPreserved`、`independentStringsUnchanged`、`nonDesignatorAttributesUnchanged` 和 `componentIdentityAndGeometryUnchanged`。功能文字使用 `pcb_execute_text_plan`；不能删除属性本体、不能把 `Designator.value` 改成功能名，也不能按 `R1/U1/C1` 字符串猜测并批量清理普通文字。该工具首次使用时加载它的当前 Schema，不加载全套 PCB 工具表。
 
-真正的 Schema 错误只查对应字段；准备过期就更新受影响旧值并重新 prepare；未知写入结果按 recoveryDirective 对账精确对象，只续未完成后缀。不要把 validate/prepare/服务恢复报告成 PCB 写入。
+真正的 Schema 错误只查对应字段；准备过期就重新 prepare。未知写入以原计划 `mode="reconcile"`，由工具两次稳定读取逐项返回 APPLIED/PENDING/CONFLICT，只拿 remainingPlan 重新 prepare/execute。CONFLICT 不生成可执行余项。原生合并后的同网、同层、同宽共线覆盖可认作已存在，不扩大读回容差。读取不等于本轮写入，VERIFIED 不等于已保存，分别查看 executionLedger、saveState 和 checkpoint。
+
+分组检查使用 `pcb_audit_geometry(checks=["groupQuality"], groups=[{name:"ADC_input",nets:["ADC_IN"],pairs:[{fromPadId:"EXAMPLE-R-PAD",toPadId:"EXAMPLE-ADC-PAD"}]}])`，或传入明确的 snapshot。referenceLayers 可列 `{layer:16,net:"GND"}`，只报告占用，不推断地铜已断裂；region 使用 snapshot 单位，输出距离/线长为 mm。预算由任务给定，不添加通用倍数或最少过孔门槛。

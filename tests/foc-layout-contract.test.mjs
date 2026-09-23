@@ -25,8 +25,8 @@ const recipes = read('references/operation-recipes.md');
 const examplePlans = [...recipes.matchAll(/```json\s*\n([\s\S]*?)\n```/g)]
   .map(match => JSON.parse(match[1]));
 
-test('v5.5 entry is bounded in bytes as well as lines', () => {
-  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.5\.\d+\n---/);
+test('v5.6 entry is bounded in bytes as well as lines', () => {
+  assert.match(skill, /^---\nname: easyeda-pcb-layout-routing\ndescription: .+\nversion: 5\.6\.\d+\n---/);
   assert.ok(skill.split('\n').length <= 115);
   assert.ok(Buffer.byteLength(skill, 'utf8') <= 16500);
   assert.ok(skill.indexOf('原理图是输入') < 1000);
@@ -67,7 +67,7 @@ test('ordinary components stay unlocked and reference-designator displays are re
   assert.match(skill, /keyVisible\/valueVisible/);
   assert.match(skill, /independentStringsUnchanged/);
   const tools = read('references/tool-index.md');
-  assert.match(tools, /实际 2\.5\.1 注册表/);
+  assert.match(tools, /实际 2\.6\.0 注册表/);
   assert.match(tools, /默认21工具/);
   assert.match(tools, /`pcb_cleanup_components`/);
   const silk = read('references/silkscreen-usability.md');
@@ -272,4 +272,14 @@ test('portable core excludes local board identity and private host paths', () =>
   const combined = core.map(read).join('\n');
   assert.doesNotMatch(combined, /4310|48\.0\s*mm|[A-Z]:\\Users\\|[A-Z]:\\PROJECT\\|~\/.agentdock/i);
   assert.match(skill, /禁止整板自动布局、自动寻路和自动布线/);
+});
+
+test('group readiness, ADC service endpoints and independent drill clearance are actionable', () => {
+  assert.match(skill, /整组设计就绪后立即执行/);
+  assert.match(skill, /串阻、电容和 ADC 端归为局部组/);
+  assert.match(skill, /独立钻孔的孔距不因同网豁免/);
+  assert.match(skill, /executionLedger/);
+  assert.match(skill, /旧摘要不能覆盖新板态/);
+  assert.match(recipes, /mode="reconcile"/);
+  assert.match(read('references/placement-routing-closure.md'), /缺失网络或端点保持未知/);
 });

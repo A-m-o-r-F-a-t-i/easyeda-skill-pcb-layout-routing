@@ -1,9 +1,11 @@
-# MCP 2.5 执行入口
+# MCP 2.6 执行入口
 
 几何数据格式继续使用 easyeda-pcb-plan/v2，文字格式继续使用 easyeda-pcb-text-plan/v1。生产公开入口合并了验证与执行。approved_schematic 正常画板使用 prepare → execute；prepare 已包含计划格式校验，validate 仅用于离线验证或参数排错。此处的格式/状态校验不是电气性能审查。
 
+- `mode=build`：从原生对象补齐缺失旧值和 affectedNets，保留给定断言，不生成布局或路径。
+- `mode=reconcile`：两次稳定读取原计划各操作，返回 APPLIED/PENDING/CONFLICT 与 remainingPlan；不写 PCB。
 - `mode=validate`：离线验证计划，返回 planSha256，不写 PCB。
-- `mode=prepare`：核对完整目标，返回绑定计划哈希的 guard。要求 Gateway Protocol v2。
+- `mode=prepare`：核对完整目标，检查整批候选铜距、独立孔距和跨对象焊盘重叠，再返回绑定计划及板态的 guard。阻断结果不能执行。要求 Gateway Protocol v2；预检不替代原生 DRC。
 - `mode=execute`：提交未改动的原计划、guard 和可选 executionId，逐批核对旧对象并读回。
 
 准备后修改计划、文档发生变化或 Bridge/Gateway 重连，旧 guard 作废。重新读取当前对象并准备，不删除旧状态断言。
@@ -14,7 +16,7 @@
 
 # easyeda-pcb-mcp 与 `easyeda-pcb-plan/v2`
 
-`easyeda-pcb-mcp`是PCB专用执行层。它负责读取当前PCB、校验并执行显式板框、独立孔槽/焊盘、铜/文字计划、重建覆铜、管理约束、受保护导入原理图变更、逐项读回、保存和批量DRC。它不负责电路设计、自动布局、自动寻路或自动布线。完整2.5.1生产工具路由见[工具索引](tool-index.md)。
+`easyeda-pcb-mcp`是PCB专用执行层。它负责读取当前PCB、校验并执行显式板框、独立孔槽/焊盘、铜/文字计划、重建覆铜、管理约束、受保护导入原理图变更、逐项读回、保存和批量DRC。它不负责电路设计、自动布局、自动寻路或自动布线。完整2.6.0生产工具路由见[工具索引](tool-index.md)。
 
 ## 1. MCP 工具边界
 
@@ -88,6 +90,7 @@ PCB MCP 不暴露任意 JavaScript 执行入口。实时 DRC 启停、完整快�
 | `minTrackWidth` | 本计划制造/电气最小线宽，使用计划单位 |
 | `minViaHole` | 最小成品孔径 |
 | `minAnnularRing` | 最小单边环宽 `(盘径-孔径)/2` |
+| `minClearance` / `minHoleClearance` | 计划单位中的铜间距 / 独立孔间距下限，默认 0 只查重叠；不会自动替代完整原生规则 |
 | `allowedLayers` | 允许出现铜图元的物理层 |
 | `reservedLayers` | 指定层仅允许列出的网络，防止信号误入 GND/电源面 |
 | `boardBounds` | 矩形安全边界；复杂板框仍需后续原生 DRC/几何检查 |
@@ -368,7 +371,8 @@ pcb_status
 
 计划批次失败时，错误详情包含：
 
-- `confirmedPlanOperations`：已经独立读回并保存的操作；
+- `confirmedPlanOperations`：已经独立读回的操作，不代表已保存；
+- `executionLedger`：VERIFIED / APPLIED_NEEDS_RECONCILE / OUTCOME_UNKNOWN / NOT_EXECUTED 与独立 saveState；
 - `failedOperationId`：第一个未通过的操作；
 - `remainingOperationIds`：仍需执行的后缀；
 - `boardDelta`：已确认前缀中的真实创建、修改、删除、无变化对象和剩余操作；
@@ -376,7 +380,7 @@ pcb_status
 - `padOverlapGate`：当前布局轮的跨组件焊盘及独立焊盘/过孔侵入检查；`BLOCKED` 或 `UNVERIFIED` 禁止开始下一轮；
 - `nextAction`：要求读取失败对象、生成新 guard 并只执行剩余后缀。
 
-不得把已确认对象放回新计划，也不得使用原 `executionId` 企图补跑。只有 `boardDelta.visibleBoardChange=true` 才能报告本工作块推进了 PCB；`already_exists`、`already_modified`、`already_absent`、validate、prepare、测试和部署均不是板上变化。`PAD_OVERLAP_BLOCKED` 无已改前缀时直接返回该错误；已有前缀时返回 `PARTIAL_SUCCESS` 并带 `blockingCause`。两种情况都先修正当前布局轮，不能切到下一轮。若结果没有确认变化，仍需读取目标区域后再决定重试或换等价 API/UI 路径。
+优先以原计划调用 reconcile，工具按明确网络/层/线宽的共线覆盖识别原生合并线段，生成未完成余项并要求重新 prepare。真实超时/响应过大且本进程留有失败记录时，仅为独立确认 PENDING 的余项自动减半批次；不会自动重放写入。进程重启丢失失败记录时仍可只读对账，不声称继承了旧故障。不得把已确认对象放回新计划，也不得使用原 `executionId` 企图补跑。只有 `boardDelta.visibleBoardChange=true` 才能报告本工作块推进了 PCB；`already_exists`、`already_modified`、`already_absent`、validate、prepare、测试和部署均不是板上变化。`PAD_OVERLAP_BLOCKED` 无已改前缀时直接返回该错误；已有前缀时返回 `PARTIAL_SUCCESS` 并带 `blockingCause`。两种情况都先修正当前布局轮，不能切到下一轮。若结果没有确认变化，仍需读取目标区域后再决定重试或换等价 API/UI 路径。
 
 ### 7.2 未知结果与暂态连接恢复
 
