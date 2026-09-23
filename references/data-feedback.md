@@ -20,4 +20,6 @@ pcb_render_inspection_svg 可指定 side=top/bottom/both、region、layers、net
 
 编辑的 view=auto/local/board/none 控制自动反馈。SVG 是结果资源，outputPath 可省略。图片生成失败与已成功的 PCB 修改分别报告。虚线元件框表示可取得的图形 BBox，不代表实体；未支持的几何类型在 metadata.omitted 中列出。
 
+整板图默认 fit=board 贴合板框，板外暂存元件在 metadata.componentsOutsideView 中列出；需要连同暂存区查看时用 fit=all。密集引脚使用图内编号和下方多列网络表，避免长列表把板面压缩到不可读。
+
 SVG 引脚标签不会写入 PCB 丝印。需要实际板上文字时使用 text 操作；原生当前视口 PNG 只在需要编辑器实际字形或显示效果时调用。
