@@ -67,7 +67,7 @@ test('ordinary components stay unlocked and reference-designator displays are re
   assert.match(skill, /keyVisible\/valueVisible/);
   assert.match(skill, /independentStringsUnchanged/);
   const tools = read('references/tool-index.md');
-  assert.match(tools, /实际 2\.6\.0 注册表/);
+  assert.match(tools, /实际 2\.6\.1 注册表/);
   assert.match(tools, /默认21工具/);
   assert.match(tools, /`pcb_cleanup_components`/);
   const silk = read('references/silkscreen-usability.md');

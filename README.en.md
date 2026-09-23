@@ -2,13 +2,16 @@
 
 [简体中文](README.md) | English
 
-This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.5.3**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
+This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.6.1**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
 
 ## Core principles
 
 - Treat the supplied schematic as approved input. Read PCB objects to place and route them, not to restart component selection or datasheet review.
 - Produce real board progress first, then run checks that are directly relevant to the current action.
 - Base placement on power loops, signal chains, return paths, connector access, assembly sides, and mechanical boundaries.
+- Form bounded functional groups around service endpoints, must-be-short links, permitted long links, and shared entrances/exits; let the complete channel determine placement and orientation.
+- Trial-route the most constrained control group and main power path before extensive routing or copper. Repeated detours, layer changes, or reference-layer occupation trigger local relayout.
+- A blocking whole-plan check prevents every write. Reconcile uncertain results read-only and rebuild only the unapplied remainder instead of replaying the plan.
 - Prefer copper areas or wide copper for high-current regions when isolation and return paths remain sound; do not replace pourable regions with many narrow traces.
 - Do not use automatic routing. Route explicitly and resolve congestion by improving placement and orientation.
 - Treat native DRC as a mandatory PCB milestone at coherent placement, critical/full routing, repour, and final release, without rescanning the whole board after every object or trace.
