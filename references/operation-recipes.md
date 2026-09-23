@@ -1,6 +1,6 @@
 # 常见 MCP 操作
 
-示例位号、网络和坐标仅演示接口，执行前使用实际设计对象。正常请求只含 operations；默认 mm，指定 target 仅在需要消除多 PCB 歧义时使用。路径由 AI 指定，MCP 不自动绕障。
+示例位号、网络和坐标仅演示接口，执行前使用实际设计对象。正常请求只含 operations，坐标和尺寸默认 mil；需要毫米时显式传 units=mm。指定 target 仅在需要消除多 PCB 歧义时使用。路径由 AI 指定，MCP 不自动绕障。
 
 ## 布局与同批实际引脚连线
 
@@ -13,8 +13,8 @@
         {
           "ref": "U1",
           "at": [
-            20,
-            18
+            787.4,
+            708.7
           ],
           "angle": 90,
           "side": "bottom"
@@ -22,8 +22,8 @@
         {
           "ref": "R8",
           "at": [
-            24,
-            19
+            944.9,
+            748
           ],
           "angle": 0
         }
@@ -32,19 +32,19 @@
     {
       "op": "route",
       "layer": "bottom",
-      "width": 0.25,
+      "width": 9.8,
       "items": [
         {
           "from": "U1.12",
           "to": "R8.1",
           "through": [
             [
-              22,
-              18
+              866.1,
+              708.7
             ],
             [
-              23,
-              19
+              905.5,
+              748
             ]
           ]
         }
@@ -64,7 +64,7 @@
       "op": "route",
       "net": "SIG",
       "layer": "top",
-      "width": 0.2,
+      "width": 7.9,
       "items": [
         {
           "points": [
@@ -73,28 +73,28 @@
               0
             ],
             [
-              3,
-              1.7
+              118.1,
+              66.9
             ],
             [
-              6,
-              1.7
+              236.2,
+              66.9
             ]
           ]
         },
         {
           "points": [
             [
-              8,
-              1
+              315,
+              39.4
             ],
             [
-              10,
-              1
+              393.7,
+              39.4
             ],
             [
-              11,
-              2
+              433.1,
+              78.7
             ]
           ]
         }
@@ -104,17 +104,17 @@
       "op": "via",
       "positions": [
         [
-          6,
-          1.7
+          236.2,
+          66.9
         ],
         [
-          11,
-          2
+          433.1,
+          78.7
         ]
       ],
       "net": "SIG",
-      "diameter": 0.6,
-      "holeDiameter": 0.3
+      "diameter": 23.6,
+      "holeDiameter": 11.8
     }
   ],
   "view": "none"
@@ -134,33 +134,33 @@
           0,
           0
         ],
-        "diameter": 40
+        "diameter": 1574.8
       }
     },
     {
       "op": "hole",
       "positions": [
         [
-          10,
-          10
+          393.7,
+          393.7
         ],
         [
-          -10,
-          -10
+          -393.7,
+          -393.7
         ]
       ],
-      "diameter": 2.8
+      "diameter": 110.2
     },
     {
       "op": "hole",
       "positions": [
         [
           0,
-          10
+          393.7
         ]
       ],
-      "diameter": 2,
-      "length": 5,
+      "diameter": 78.7,
+      "length": 196.9,
       "angle": 30
     },
     {
@@ -168,10 +168,10 @@
       "geometry": {
         "type": "circle",
         "center": [
-          10,
-          10
+          393.7,
+          393.7
         ],
-        "diameter": 6
+        "diameter": 236.2
       },
       "layer": "multi",
       "ruleTypes": [
@@ -204,13 +204,13 @@
       "padShape": {
         "type": "oval",
         "size": [
-          4,
-          6
+          157.5,
+          236.2
         ]
       },
       "hole": {
-        "diameter": 2,
-        "length": 4
+        "diameter": 78.7,
+        "length": 157.5
       },
       "metallization": true
     },
@@ -222,20 +222,20 @@
         "type": "polygon",
         "points": [
           [
-            -2,
-            -2
+            -78.7,
+            -78.7
           ],
           [
-            10,
-            -2
+            393.7,
+            -78.7
           ],
           [
-            10,
-            2
+            393.7,
+            78.7
           ],
           [
-            -2,
-            2
+            -78.7,
+            78.7
           ]
         ]
       }
@@ -247,12 +247,12 @@
       "geometry": {
         "type": "rectangle",
         "at": [
-          -15,
-          -15
+          -590.6,
+          -590.6
         ],
         "size": [
-          30,
-          30
+          1181.1,
+          1181.1
         ]
       },
       "name": "GND_BOTTOM"
@@ -273,7 +273,7 @@
         "R2"
       ],
       "axis": "y",
-      "value": 5
+      "value": 196.9
     },
     {
       "op": "distribute",
@@ -282,8 +282,8 @@
         "R2"
       ],
       "axis": "x",
-      "start": 2,
-      "spacing": 3
+      "start": 78.7,
+      "spacing": 118.1
     },
     {
       "op": "radial",
@@ -295,7 +295,7 @@
         0,
         0
       ],
-      "radius": 15,
+      "radius": 590.6,
       "startAngle": 30,
       "stepAngle": 60,
       "orientationOffset": 90
@@ -309,7 +309,7 @@
         ]
       },
       "translate": [
-        2,
+        78.7,
         0
       ]
     }
@@ -329,7 +329,7 @@
         "net": "5V"
       },
       "set": {
-        "width": 1
+        "width": 39.4
       }
     },
     {
@@ -344,20 +344,20 @@
     {
       "op": "text",
       "layer": "top_silkscreen",
-      "fontSize": 1.2,
-      "width": 0.18,
+      "fontSize": 47.2,
+      "width": 7.1,
       "items": [
         {
           "at": [
-            5,
-            5
+            196.9,
+            196.9
           ],
           "text": "UART1"
         },
         {
           "at": [
-            5,
-            7
+            196.9,
+            275.6
           ],
           "text": "5V TX RX GND"
         }

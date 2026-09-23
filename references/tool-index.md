@@ -1,6 +1,6 @@
-# PCB MCP 3.0.0 工具索引
+# PCB MCP 3.0.1 工具索引
 
-默认21工具。常见操作优先 MCP，target 可为简短文档 UUID，唯一 PCB 可以省略。普通编辑不需要 expected、guard 或 prepare；所有设计取舍由 AI 完成。
+默认21工具。常见操作优先 MCP，target 可为简短文档 UUID，唯一 PCB 可以省略。所有常规 units/unit 默认 mil，需要毫米时显式填写 mm。普通编辑不需要 expected、guard 或 prepare；所有设计取舍由 AI 完成。
 
 | 工具 | 用途 | 输入字段 |
 | --- | --- | --- |
@@ -9,7 +9,7 @@
 | `pcb_status` | Read current PCB identity, units and client version. A unique active PCB needs no target parameter. | target, bridgeUrl |
 | `pcb_read` | Read complete overview (footprint, size sources, pose, pin/net orientations), local scene or raw objects. kind=operations returns editing schemas; kind=result pages retained complete data. Native-object coordinates are labeled mil. | target, bridgeUrl, kind, units, refs, ids, net, layer, region, angles, orientationCoordinates, offset, limit, resultId, section, sceneSection, include, parentPrimitiveId |
 | `pcb_pick` | Find exact native objects at a point or in a rectangle without changing selection. | target, units, point, region, offset, limit, bridgeUrl |
-| `pcb_execute_plan` | Preferred bulk editor for placement, explicit routes, copper, mechanical objects and text. Submit typed operations directly in mm; no guard or design gate. Large batches retain order and return actual partial results plus optional SVG. | target, units, operations, planPath, save, view, bridgeUrl |
+| `pcb_execute_plan` | Bulk editor for placement, explicit routes, copper, mechanics and text. Units default to mil; pass units=mm for metric input. No guard or design gate. Large ordered batches return factual partial results and optional SVG. | target, units, operations, planPath, save, view, bridgeUrl |
 | `pcb_execute_text_plan` | Shortcut using the same typed bulk operation contract for text, attributes and other explicit edits; no separate text plan language. | target, units, operations, planPath, save, view, bridgeUrl |
 | `pcb_cleanup_components` | Unlock selected/all components and hide attached Designator text without deleting component identity. | target, bridgeUrl, refs, unlock, hideDesignators, save, view |
 | `pcb_rebuild_pours` | Rebuild selected or all pours and return actual fill results. Does not run DRC or judge design quality. | target, bridgeUrl, pourIds, save |
@@ -18,7 +18,7 @@
 | `pcb_compare_associated_netlists` | Return associated schematic/PCB logical differences. Does not import changes. | target, expectedSchematicUuid, offset, limit, bridgeUrl |
 | `pcb_import_schematic_changes` | Import changes from the PCB-associated schematic in one MCP call. No externally supplied digest/guard; return actual changes and native confirmation state. | target, bridgeUrl, save |
 | `pcb_audit_geometry` | On-demand geometric/connectivity/group measurements from a supplied or single-read live scene. Reports data and coverage; never authorizes or blocks editing. | target, snapshot, toleranceMil, detailLimit, bridgeUrl, groups, referenceLayers, checks, net, nativeUnroutedCount |
-| `pcb_inspect_pinmap` | Read selected or all components with actual pad numbers/nets, poses, footprint dimensions and same-side orientation maps. Default mm. | target, bridgeUrl, refs, units, angles, orientationCoordinates |
+| `pcb_inspect_pinmap` | Read selected or all components with actual pad numbers/nets, poses, footprint dimensions and same-side orientation maps. Default mil; pass units=mm explicitly for metric output. | target, bridgeUrl, refs, units, angles, orientationCoordinates |
 | `pcb_inspect_silkscreen` | On-demand native text sizes, bounds and possible overlaps. Returns measurements only. | target, scope, maximumObjects, detailLimit, ids, offset, limit, minimumFontSizeMm, minimumStrokeWidthMm, bridgeUrl |
 | `pcb_save_and_drc` | Save and/or run native DRC on demand. Return complete counts and paged details, with job continuation when running; no editing permission gate. | target, bridgeUrl, save, runDrc, drcJobId, drcWaitMs, drcPollIntervalMs, drcDetailOffset, drcDetailLimit, releaseDrcJob |
 | `pcb_verify_api_gates` | Compatibility name for an optional combined DRC/netlist data report. Returns facts, not editing permission. | target, expectedSchematicUuid, drcDetailLimit, netlistDetailLimit, bridgeUrl |

@@ -1,6 +1,6 @@
 # 布局数据与图形反馈
 
-使用 pcb_read kind=overview 取得整板摘要，refs/region 可缩小组件范围。返回组件身份、封装引用、数值、位置、角度、板面和焊盘表，网络表同时列出实际端点。原生 shape/hole 数组仍明确标为 mil，换算后的 at、尺寸和 orientation offsets 使用请求单位。
+使用 pcb_read kind=overview 取得整板摘要，refs/region 可缩小组件范围。返回组件身份、封装引用、数值、位置、角度、板面和焊盘表，网络表同时列出实际端点。总览、引脚映射、区域和 SVG 坐标默认 mil；需要毫米时显式传 units=mm。原生 shape/hole 数组仍明确标为 mil，换算后的 at、尺寸和 orientation offsets 使用请求单位。
 
 ## 朝向
 
