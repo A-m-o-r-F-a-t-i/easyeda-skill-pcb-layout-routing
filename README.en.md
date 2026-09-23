@@ -1,41 +1,7 @@
-# EasyEDA PCB Layout and Routing Skill
+# EasyEDA PCB Layout/Routing Skill 6.0.0
 
-[简体中文](README.md) | English
+MCP-first guidance for approved schematics. The model owns layout, explicit routes and analysis timing; MCP 3.0.0 simplifies native operations, bulk requests and factual feedback. No mandatory prepare/execute workflow, small-batch cap or design approval gate.
 
-This repository contains execution guidance for AI agents working on production-oriented PCB designs in EasyEDA Pro. The current version is **5.6.1**. It turns an approved schematic into a board by covering board outlines, functional partitioning, component orientation, placement, explicit routing, copper pours, silkscreen, verification, and manufacturing delivery. It is not a second schematic-review process.
+[Skill](SKILL.md) · [Operation examples](references/operation-recipes.md) · [Data and SVG](references/data-feedback.md) · [中文](README.md).
 
-## Core principles
-
-- Treat the supplied schematic as approved input. Read PCB objects to place and route them, not to restart component selection or datasheet review.
-- Produce real board progress first, then run checks that are directly relevant to the current action.
-- Base placement on power loops, signal chains, return paths, connector access, assembly sides, and mechanical boundaries.
-- Form bounded functional groups around service endpoints, must-be-short links, permitted long links, and shared entrances/exits; let the complete channel determine placement and orientation.
-- Trial-route the most constrained control group and main power path before extensive routing or copper. Repeated detours, layer changes, or reference-layer occupation trigger local relayout.
-- A blocking whole-plan check prevents every write. Reconcile uncertain results read-only and rebuild only the unapplied remainder instead of replaying the plan.
-- Prefer copper areas or wide copper for high-current regions when isolation and return paths remain sound; do not replace pourable regions with many narrow traces.
-- Do not use automatic routing. Route explicitly and resolve congestion by improving placement and orientation.
-- Treat native DRC as a mandatory PCB milestone at coherent placement, critical/full routing, repour, and final release, without rescanning the whole board after every object or trace.
-- Anchor each new outline to the origin: use `[0,0]` as a circle center or an explicit polygon vertex. A rectangle may use the origin as one corner with adjacent edges on the X/Y axes. Never overlap pads owned by different components or place standalone pads/vias over component pads.
-- Compute a small low-component board as one complete placement and submit it as one round of at most 100 expanded operations. Partition larger boards by functional region, and do not start the next round until the current overlap gate passes.
-- Keep ordinary components unlocked by default. During full-board finishing, remove all visible reference-designator silkscreen while preserving the mandatory `Designator` identity attributes, BOM linkage, and functional text.
-- Make silkscreen readable at real manufacturing scale. Connector names, pin order, and net meaning take priority over low-value reference text.
-- Merge valid user interventions into the current design and continue from the latest state instead of reverting to an older plan.
-
-See [SKILL.md](SKILL.md) for the complete workflow, gates, tool routing, and acceptance rules. Load files under `references/` and `templates/` only when the current task needs them.
-
-## Component boundaries
-
-| Component | Responsibility |
-| --- | --- |
-| `easyeda-pcb-layout-routing` | PCB engineering decisions, execution order, and acceptance criteria |
-| `easyeda-pcb-mcp` | Typed operations and independent readback against the active EasyEDA PCB document |
-| `easyeda-api` | Bridge, Gateway, window identity, protocols, and general public APIs |
-| `easyeda-schematic-net-fanout` | Schematic design, ECO handling, and circuit presentation |
-| `easyeda-eprj3` | Offline `.eprj3` generation and format validation |
-
-## Usage
-
-Install this directory as an AgentDock Skill or in another agent system that supports `SKILL.md`. It should be loaded when an agent is asked to create a PCB from an approved schematic, continue placement/routing/pours/silkscreen, audit user constraints, or feed stable capability gaps back into the Skill or MCP without abandoning the board task.
-
-This repository does not provide an autorouter and does not replace final engineering review of electrical safety, current capacity, mechanics, and manufacturing output.
-
+Run `node --test tests/*.test.mjs` for documentation and example validation, not a claim of production-board correctness.
