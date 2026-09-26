@@ -11,7 +11,7 @@ const walk=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(ent
 const docs=walk(root).filter(file=>/\.md$/.test(file));
 const removedTools=['pcb_execute_plan','pcb_execute_text_plan','pcb_cleanup_components','pcb_inspect_pinmap','pcb_verify_api_gates','pcb_render_inspection_svg','pcb_capture_inspection_view'];
 
-test('v7 entry is compact and MCP-first',()=>{assert.match(skill,/version: 7\.1\.0/);assert.ok(skill.split('\n').length<=100);assert.ok(Buffer.byteLength(skill)<16000);assert.match(skill,/优先使用 MCP/);});
+test('v7 entry is compact and MCP-first',()=>{assert.match(skill,/version: 7\.2\.0/);assert.ok(skill.split('\n').length<=100);assert.ok(Buffer.byteLength(skill)<16000);assert.match(skill,/优先使用 MCP/);});
 test('approved schematic remains input without upstream review',()=>{assert.match(skill,/approved_schematic/);assert.match(skill,/不重新开展选型/);assert.match(skill,/也不把这些事项延后/);});
 test('AI owns design and analysis timing',()=>{assert.match(skill,/AI 决定功能分区/);assert.match(skill,/不作布局许可或设计评分/);assert.match(skill,/按需调用/);assert.match(skill,/具体时机由任务需要决定/);});
 test('common operations remain MCP-first rather than handwritten APIs',()=>{assert.match(skill,/均优先调用对应 PCB MCP/);assert.match(skill,/常见能力补进 MCP/);assert.match(skill,/不要求人为制造一次失败调用/);});

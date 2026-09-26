@@ -1,0 +1,154 @@
+{
+  "purpose": "静态文档条款回归与人工场景审阅；未运行模型行为评测",
+  "scenarios": [
+    {
+      "id": "channel",
+      "input": "局部支路减孔，主干同时变长",
+      "reference": "references/placement-routing-closure.md",
+      "requiredTerms": [
+        "完整通道",
+        "相同端点和范围",
+        "主干变长"
+      ],
+      "expectedDecision": "比较源端至接收端、全部关联网络与返回",
+      "incorrectInference": "由局部减孔推导整条通道改善"
+    },
+    {
+      "id": "sense_roles",
+      "input": "同名电流网络有主路和检测输入",
+      "reference": "references/experimental/motor-foc.md",
+      "requiredTerms": [
+        "SENSE",
+        "主电流",
+        "对应焊盘与支路"
+      ],
+      "expectedDecision": "根据实际焊盘拆分主电流与检测支路",
+      "incorrectInference": "按网络名称把所有段视为小信号"
+    },
+    {
+      "id": "small_via",
+      "input": "功率网络含检测用小孔",
+      "reference": "references/placement-routing-closure.md",
+      "requiredTerms": [
+        "小孔",
+        "同层通路",
+        "必经"
+      ],
+      "expectedDecision": "检查主电流端点的实际路径和必经关系",
+      "incorrectInference": "看到同网小孔就认定承载全部主电流"
+    },
+    {
+      "id": "reference_layer",
+      "input": "其他层拥挤而参考层有空白",
+      "reference": "references/placement-routing-closure.md",
+      "requiredTerms": [
+        "默认跨区布线层",
+        "必要例外",
+        "实际成铜"
+      ],
+      "expectedDecision": "先调整通道，再检查必要例外的参考铜和返回",
+      "incorrectInference": "不经分析把参考层作为溢出布线空间"
+    },
+    {
+      "id": "return_target",
+      "input": "附近地孔接入不同铜区",
+      "reference": "references/placement-routing-closure.md",
+      "requiredTerms": [
+        "二维距离",
+        "正确参考铜区",
+        "通孔焊盘"
+      ],
+      "expectedDecision": "根据实际连接与返回目标判断",
+      "incorrectInference": "最近孔距离直接代表回流质量"
+    },
+    {
+      "id": "via_candidate",
+      "input": "候选通孔只避开可见铜层",
+      "reference": "references/placement-routing-closure.md",
+      "requiredTerms": [
+        "全部相关铜层",
+        "槽孔",
+        "同批孔",
+        "孔边净距"
+      ],
+      "expectedDecision": "一次取得全层局部几何后批量计算候选位置",
+      "incorrectInference": "先放孔再靠大量DRC寻找空位"
+    },
+    {
+      "id": "native_split",
+      "input": "修改成功但编辑器重新分段",
+      "reference": "references/topology-and-receipts.md",
+      "requiredTerms": [
+        "执行成功",
+        "自动分段",
+        "定向读取",
+        "旧 ID",
+        "返回连接"
+      ],
+      "expectedDecision": "以回执和受影响网络新对象继续",
+      "incorrectInference": "沿用旧对象或整网删除"
+    },
+    {
+      "id": "copper_islands",
+      "input": "铺铜边界减少但存在孔洞与孤立分量",
+      "reference": "references/data-feedback.md",
+      "requiredTerms": [
+        "边界对象",
+        "孔洞轮廓",
+        "实际连通分量"
+      ],
+      "expectedDecision": "区分边界、孔洞与实际铜连通分量",
+      "incorrectInference": "把边界数当铜岛数"
+    },
+    {
+      "id": "cross_section",
+      "input": "已选截面较宽而下游尚未测量",
+      "reference": "references/topology-and-receipts.md",
+      "requiredTerms": [
+        "只代表这条截面",
+        "不是自动寻找",
+        "coverage"
+      ],
+      "expectedDecision": "限定截面结论并检查关键出口",
+      "incorrectInference": "声称获得全局最小铜颈"
+    },
+    {
+      "id": "drc_current",
+      "input": "历史DRC为零后再次修改孔铜",
+      "reference": "references/drc-policy.md",
+      "requiredTerms": [
+        "覆盖当前改动",
+        "历史零错误",
+        "必要支路或返回"
+      ],
+      "expectedDecision": "取得覆盖改动的检查并恢复被破坏连接",
+      "incorrectInference": "将历史DRC当作当前全板通过"
+    },
+    {
+      "id": "duplicate_uuid",
+      "input": "工程副本沿用同一文档UUID",
+      "reference": "references/data-feedback.md",
+      "requiredTerms": [
+        "工程 UUID",
+        "复用文档 UUID",
+        "字符串",
+        "先消歧"
+      ],
+      "expectedDecision": "确认工程与窗口身份，按现有Schema选目标",
+      "incorrectInference": "默认使用活动板或编造读写参数"
+    },
+    {
+      "id": "fair_comparison",
+      "input": "参考版部分指标更好部分更差",
+      "reference": "references/data-feedback.md",
+      "requiredTerms": [
+        "比例",
+        "本任务机械",
+        "改善和退步",
+        "验收阈值"
+      ],
+      "expectedDecision": "统一范围并保留当前任务要求和实际取舍",
+      "incorrectInference": "强行照抄原版或只展示退步"
+    }
+  ]
+}
