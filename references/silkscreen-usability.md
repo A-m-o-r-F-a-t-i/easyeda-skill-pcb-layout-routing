@@ -8,7 +8,7 @@
 
 ## MCP 操作
 
-pcb_cleanup_components 可按需隐藏 attached Designator 的 keyVisible/valueVisible，同时保留属性和 BOM 身份。是否解锁单独选择，未修改的锁定状态保持原值。不要按文字看起来像 R1/C1 就删除普通字符串。
+pcb_edit 的 cleanup 操作可按需隐藏 attached Designator 的 keyVisible/valueVisible，同时保留属性和 BOM 身份。是否解锁单独选择，未修改的锁定状态保持原值。不要按文字看起来像 R1/C1 就删除普通字符串。
 
 text 操作创建真实文字，modify 可修改选定 string/attribute 的位置、字号和显示状态。只为改丝印时不修改引脚网络，不把 Designator.value 改成功能名。独立 strings 为空不表示不存在属性文字。
 

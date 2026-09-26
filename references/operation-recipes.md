@@ -1,6 +1,6 @@
 # 常见 MCP 操作
 
-示例位号、网络和坐标仅演示接口，执行前使用实际设计对象。正常请求只含 operations，坐标和尺寸默认 mil；需要毫米时显式传 units=mm。指定 target 仅在需要消除多 PCB 歧义时使用。路径由 AI 指定，MCP 不自动绕障。
+示例位号、网络和坐标仅演示接口，执行前使用实际设计对象。正常请求只含 operations，所有坐标和尺寸均为 mil。指定 target 仅在需要消除多 PCB 歧义时使用。路径由 AI 指定，MCP 不自动绕障。
 
 ## 布局与同批实际引脚连线
 
@@ -380,4 +380,20 @@
 
 铺铜边界之后按需要调用 pcb_rebuild_pours。普通保存可调用 pcb_save_and_drc(runDrc=false)，原生 DRC 按需调用；这些不构成每次编辑的固定后缀。
 
-完整 schema 使用 pcb_read(kind=operations)，整板数据使用 kind=overview；view=none 适合连续编辑。修改与删除仅按所列对象执行，未填写字段保持原值。
+以上 JSON 作为 pcb_edit 的输入。完整 Schema 使用 pcb_read(kind=operations)，整板数据使用 kind=overview；view=none 适合连续编辑。修改与删除仅按所列对象执行，未填写字段保持原值。
+
+## 朝向、连续铜带和明确孔阵列
+
+```json
+{
+  "requestId": "power-group-edit-01",
+  "operations": [
+    {"op": "orient", "ref": "Q1", "pads": ["1", "2", "3"], "toward": [300, 400]},
+    {"op": "copper_path", "net": "PWR", "layer": "bottom", "points": [[0, 0], [200, 0], [260, 60]], "width": 40},
+    {"op": "via_array", "net": "GND", "origin": [100, 160], "rows": 2, "columns": 3, "pitch": [40, 40], "angle": 15, "diameter": 32, "holeDiameter": 18}
+  ],
+  "view": "local"
+}
+```
+
+铜带路径、宽度和孔参数仅演示几何接口，没有额定载流含义。orientation 使用现有板面，选定焊盘组的中心不能与封装原点重合。改变布局或路径时使用新的 requestId；读取旧结果不会重新执行修改。
